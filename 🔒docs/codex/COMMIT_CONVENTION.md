@@ -117,13 +117,10 @@ Risk: Low
 Breaking Changes: No
 Documentation Impact: Required
 
-## Commit proposé FR
-
+## Commit proposé FR & EN
 docs: ...
 
-## Commit proposé EN
 
-docs: ...
 ```
 
 Ne jamais terminer une réponse contenant des modifications sans :

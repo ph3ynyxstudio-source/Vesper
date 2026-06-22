@@ -1,0 +1,118 @@
+.project-card {
+  width: 100%;
+  min-height: 190px;
+  padding: 18px;
+  border: 1px solid rgba(84, 214, 255, 0.12);
+  border-radius: 18px;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 18, 36, 0.88),
+    rgba(8, 14, 28, 0.72)
+  );
+  color: var(--text-primary, #f4f7fb);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.project-card:hover {
+  border-color: rgba(84, 214, 255, 0.28);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 0 18px rgba(84, 214, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.project-card.active {
+  border-color: rgba(168, 85, 247, 0.85);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 0 22px rgba(168, 85, 247, 0.18);
+}
+
+.project-card-header {
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  gap: 14px;
+  align-items: start;
+}
+
+.project-card-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid rgba(84, 214, 255, 0.28);
+  border-radius: 14px;
+  background: rgba(84, 214, 255, 0.08);
+  color: var(--accent-blue, rgb(84, 214, 255));
+  font-size: 26px;
+}
+
+.project-card-title-group h3 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.project-card-type {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-secondary, #9aa8c2);
+  font-size: 13px;
+}
+
+.project-card-status {
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.project-card-status.active {
+  color: #7dd3fc;
+  background: rgba(125, 211, 252, 0.1);
+}
+
+.project-card-status.pause {
+  color: #c084fc;
+  background: rgba(192, 132, 252, 0.1);
+}
+
+.project-card-status.concept {
+  color: #54d6ff;
+  background: rgba(84, 214, 255, 0.1);
+}
+
+.project-card-status.archived {
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.1);
+}
+
+.project-card-description {
+  margin: 18px 0 0;
+  color: var(--text-secondary, #9aa8c2);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.project-card-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(84, 214, 255, 0.1);
+  color: var(--text-muted, #66738c);
+  font-size: 13px;
+}
+
+.project-card-footer strong {
+  color: var(--accent-blue, rgb(84, 214, 255));
+  font-weight: 600;
+}

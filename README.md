@@ -1,285 +1,186 @@
-# Vesper
-FR : Cockpit de contexte local-first pour explorer les projets, la documentation et les connaissances de l’écosystème 
-PH3YNYX.  EN : Local-first context cockpit for exploring projects, documentation and knowledge across the PH3YNYX ecosystem.
+VespΣr
 
-# ✧ VespΣr v0.1
+PH3YNYX.OS Context Cockpit
 
+VespΣr est un cockpit de contexte local-first conçu pour naviguer rapidement dans un écosystème de projets sans remplacer le filesystem.
 
-### Cockpit visuel de PH3YNYX.OS
+Son objectif est simple :
 
-VespΣr est le point d'entrée rapide vers l'écosystème de projets locaux.
-
-Son objectif est de répondre à trois questions en moins de cinq secondes :
-
-* Où est mon projet ?
-* Qu'est-ce qui est disponible ?
-* Comment j'y accède ?
-
----
-
-# Philosophie
-
-| Aspect     | VespΣr                   | chr0                  |
-| ---------- | ------------------------ | --------------------- |
-| Rôle       | Naviguer et consulter    | Écrire et synthétiser |
-| Opération  | Lecture                  | Création et édition   |
-| Scope      | Contexte et accès rapide | Mémoire et évolution  |
-| Principe   | Local First              | Local First           |
-| Validation | Humaine                  | Humaine               |
-
----
-
-## Ce que VespΣr n'est pas
-
-VespΣr ne remplace pas :
-
-* L'explorateur Windows
-* Obsidian
-* GitHub
-* VS Code
-* Un gestionnaire de tâches
-* Une IA
-
----
-
-## Ce que VespΣr fait
-
-VespΣr se contente de :
-
-* Lire le filesystem
-* Découvrir les projets disponibles
-* Détecter les dossiers clés
-* Afficher le contexte d'un projet
-* Afficher les documents importants
-* Afficher les dernières sessions disponibles
-* Fournir des accès rapides vers les outils associés
-
-Le filesystem demeure toujours la source de vérité.
-
----
-
-# Vision
+- retrouver les projets ;
+- retrouver leur documentation ;
+- retrouver leur contexte ;
+- retrouver leurs ressources ;
+- retrouver leurs dernières sessions ;
+- accéder rapidement aux outils associés.
 
 VespΣr n'est pas un gestionnaire de projet.
 
-VespΣr est un cockpit de contexte.
-
-Il sert à rendre immédiatement visibles :
-
-* la vision d'un projet
-* sa documentation
-* ses contextes
-* ses ressources
-* ses dernières sessions
-* ses liens utiles
-
-sans avoir à parcourir manuellement plusieurs dossiers.
+VespΣr est une couche de lecture et d'orientation construite au-dessus du filesystem.
 
 ---
 
-# Relation avec chr0
+Philosophie
 
-Les deux projets sont complémentaires.
+Local First
 
-## chr0
+Les données restent sur la machine de l'utilisateur.
 
-Responsable de :
+VespΣr ne dépend pas d'un service cloud pour fonctionner.
 
-* Capturer les sessions
-* Produire les synthèses
-* Conserver la mémoire
-* Structurer l'évolution
+Filesystem First
 
-## VespΣr
+Le filesystem est la source de vérité.
 
-Responsable de :
+Les projets existent parce qu'ils existent sur le disque.
 
-* Lire les contextes
-* Afficher les synthèses existantes
-* Explorer les projets
-* Faciliter la navigation
+VespΣr observe cette structure et la rend plus facile à explorer.
 
-```text
-chr0 writes memory.
-VespΣr reads memory.
-```
+Read Only MVP
 
----
+Le MVP v0.1 est principalement en lecture seule.
 
-# Stack
+VespΣr peut :
 
-### Frontend
+- découvrir les projets ;
+- lire les documents ;
+- afficher le contexte ;
+- ouvrir des outils externes.
 
-* React 19
-* TypeScript
-* Vite
+VespΣr ne doit pas :
 
-### Desktop
-
-* Tauri 2
-* Rust
-
-### Style
-
-* Design Tokens partagés avec chr0
-
-### État
-
-* React Hooks
-* Pas de Redux
-* Pas de base de données
-
-### Stockage
-
-* Filesystem local
-* Markdown
-* JSON
+- modifier les documents ;
+- réécrire des fichiers ;
+- supprimer des données ;
+- produire automatiquement du contenu.
 
 ---
 
-# MVP v0.1
+Relation avec chr0
 
-Objectifs :
+chr0 produit :
 
-* Découverte automatique des projets
-* Navigation entre projets
-* Lecture des contextes
-* Lecture des documents importants
-* Lecture des dernières sessions
-* Détection de l'intégrité des dossiers
-* Accès rapides vers VS Code, Terminal, Explorer et GitHub
-* Interface cohérente avec PH3YNYX.OS
+- des sessions ;
+- des synthèses ;
+- de la mémoire projet.
 
----
+VespΣr consulte cette information.
 
-# Hors Scope
+VespΣr ne la génère pas.
 
-VespΣr ne vise pas à inclure :
+chr0
+↓
+écrit la mémoire
 
-* Chat IA
-* Gestion de tâches
-* Édition de fichiers
-* Synchronisation cloud
-* Score de productivité
-* Analytics utilisateurs
+Filesystem
+↓
+source de vérité
+
+VespΣr
+↓
+lit et navigue le contexte
 
 ---
 
-# Structure d'un projet
+MVP v0.1
 
-```text
-Project
-│
-├── Docs
-├── Assets
-├── App
-├── Data
-├── Exports
-├── README.md
-├── CONTEXT.md
-└── vesper.json
-```
+Le MVP se concentre sur un seul objectif :
 
----
+retrouver rapidement le contexte d'un projet.
 
-# Métadonnées (vesper.json)
+Inclus
 
-Chaque projet peut fournir un fichier optionnel :
+- découverte locale des projets ;
+- affichage des métadonnées ;
+- lecture des documents Markdown ;
+- affichage du contexte ;
+- affichage des dernières sessions ;
+- navigation entre projets ;
+- ouverture rapide :
+  - VS Code ;
+  - Explorateur ;
+  - GitHub ;
+  - Terminal.
 
-```json
-{
-  "name": "Chr0nosV3rs",
-  "icon": "↻",
-  "color": "#7B5EA7",
-  "description": "Session tracker desktop.",
-  "status": "active"
-}
-```
+Exclus
 
-Valeurs possibles :
-
-```text
-active
-pause
-concept
-archived
-```
-
-Si aucun fichier n'est présent, VespΣr utilise automatiquement des valeurs par défaut.
+- gestionnaire de tâches ;
+- base de données ;
+- synchronisation cloud ;
+- IA conversationnelle ;
+- analytics ;
+- édition Markdown ;
+- génération automatique de contenu.
 
 ---
 
-# Principes de développement
+Architecture
 
-* Local First
-* Human First
-* Read-Only MVP
-* Filesystem First
-* Simplicité avant automatisation
-* Réutilisation des Design Tokens de chr0
+Filesystem
+     │
+     ▼
+Rust / Tauri
+     │
+     ▼
+Services React
+     │
+     ▼
+Interface utilisateur
 
----
+Frontend
 
-# Architecture
+- React
+- TypeScript
+- Vite
 
-```text
-src/
- ├─ features/
- ├─ components/
- ├─ services/
- ├─ theme/
- └─ assets/
+Backend
 
-src-tauri/
- ├─ commands/
- ├─ domain/
- ├─ filesystem/
- └─ security/
-```
+- Rust
+- Tauri 2
 
 ---
 
-# Roadmap
+Structure du cockpit
 
-### v0.1
+Sidebar
+↓
+Projets
 
-* Découverte des projets
-* Lecture des contextes
-* Détection d'intégrité
-* Navigation rapide
+Centre
+↓
+Navigation et ressources
 
-### v0.5
-
-* Recherche
-* Dernières sessions chr0
-* Résumés d'activité
-* Raccourcis clavier
-
-### v1.0
-
-* Commandes personnalisées
-* Couleurs dynamiques par projet
-* Navigation avancée
-* Intégration légère avec chr0
+Panneau droit
+↓
+Contexte projet
+↓
+Sessions chr0
+↓
+Actions rapides
 
 ---
 
-# Manifeste
+Stack
 
-```text
-⌛ chr0 comprend
-
-◑ Lun△rMood observe
-
-Σ BΣTA explore
-
-✦ Astr4lForge crée
-
-✧ VespΣr navigue
-```
+- React
+- TypeScript
+- Vite
+- Tauri 2
+- Rust
 
 ---
 
-### Une page. Une question. Une action.
+État actuel
 
-VespΣr est conçu pour retrouver rapidement le bon contexte, au bon moment, sans détour.
+Version :
+
+v0.1
+
+Statut :
+
+Prototype MVP
+
+---
+
+Licence
+
+À définir.

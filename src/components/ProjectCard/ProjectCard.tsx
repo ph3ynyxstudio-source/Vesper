@@ -35,9 +35,12 @@ export function ProjectCard({
       className={`project-card ${isActive ? "active" : ""}`}
       type="button"
       onClick={onClick}
+      aria-pressed={isActive}
     >
       <div className="project-card-header">
-        <div className="project-card-icon">{icon}</div>
+        <div className="project-card-icon" aria-hidden="true">
+          {icon}
+        </div>
 
         <div className="project-card-title-group">
           <h3>{name}</h3>

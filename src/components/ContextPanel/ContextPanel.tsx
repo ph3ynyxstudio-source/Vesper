@@ -9,6 +9,10 @@ type ContextPanelProps = {
   lastSession: string;
   summary: string;
   sessionEnd: string;
+  contextCopyState?: "idle" | "copied" | "error";
+  sessionCopyState?: "idle" | "copied" | "error";
+  onCopyContext?: () => void;
+  onCopySession?: () => void;
 };
 
 const statusLabels: Record<ProjectStatus, string> = {
@@ -26,7 +30,22 @@ export function ContextPanel({
   lastSession,
   summary,
   sessionEnd,
+  contextCopyState = "idle",
+  sessionCopyState = "idle",
+  onCopyContext,
+  onCopySession,
 }: ContextPanelProps) {
+  const contextCopyLabel = {
+    idle: "Copier le contexte",
+    copied: "Contexte copié",
+    error: "Copie impossible",
+  }[contextCopyState];
+  const sessionCopyLabel = {
+    idle: "Copier le markdown",
+    copied: "Markdown copié",
+    error: "Copie impossible",
+  }[sessionCopyState];
+
   return (
     <aside className="context-panel" aria-labelledby="context-panel-title">
       <div className="context-panel-heading">
@@ -62,14 +81,39 @@ export function ContextPanel({
         <p>{summary}</p>
       </section>
 
-      <section className="context-panel-section context-panel-session">
-        <h3>Fin de session chr0</h3>
-        <p>{sessionEnd}</p>
-      </section>
-
-      <button className="context-panel-copy" type="button">
-        Copier le contexte
+      <button
+        className="context-panel-copy"
+        type="button"
+        onClick={onCopyContext}
+        disabled={!onCopyContext}
+        data-state={contextCopyState}
+      >
+        {contextCopyLabel}
       </button>
+
+      <section className="context-panel-section context-panel-session">
+        <div className="context-panel-session-heading">
+          <span>Fin de session chr0</span>
+          <small>Markdown</small>
+        </div>
+        <pre>{sessionEnd}</pre>
+        <button
+          className="context-panel-session-copy"
+          type="button"
+          onClick={onCopySession}
+          disabled={!onCopySession}
+          data-state={sessionCopyState}
+        >
+          {sessionCopyLabel}
+        </button>
+      </section>
+      <span className="context-panel-copy-status" aria-live="polite">
+        {contextCopyState === "copied" ? "Le contexte est copié. " : ""}
+        {sessionCopyState === "copied" ? "Le markdown est copié." : ""}
+        {contextCopyState === "error" || sessionCopyState === "error"
+          ? "Le presse-papiers n’est pas accessible."
+          : ""}
+      </span>
     </aside>
   );
 }

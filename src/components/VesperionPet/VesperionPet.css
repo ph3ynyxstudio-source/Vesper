@@ -1,0 +1,35 @@
+.vesperion-pet-shell {
+  position: absolute;
+  right: 18px;
+  bottom: 16px;
+  z-index: 20;
+  width: 144px;
+  height: 156px;
+  overflow: hidden;
+  cursor: grab;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  filter: drop-shadow(0 12px 22px rgba(2, 6, 18, 0.72));
+  transition: filter 140ms ease, transform 140ms ease;
+}
+
+.vesperion-pet-shell.is-dragging {
+  cursor: grabbing;
+  filter:
+    drop-shadow(0 16px 26px rgba(2, 6, 18, 0.76))
+    drop-shadow(0 0 12px rgba(148, 74, 255, 0.58));
+  transform: translateY(-4px) scale(1.03);
+}
+
+.vesperion-pet {
+  width: 144px;
+  height: 156px;
+  background-image: url("/pets/codexion/spritesheet.webp");
+  background-position:
+    calc(var(--vesperion-frame) * -144px)
+    calc(var(--vesperion-row) * -156px);
+  background-repeat: no-repeat;
+  background-size: 1152px 1404px;
+  image-rendering: auto;
+}

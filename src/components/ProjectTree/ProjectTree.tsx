@@ -1,44 +1,46 @@
 import "./ProjectTree.css";
 
-export type ProjectTreeSection = {
-  name: string;
-  items: string[];
+export type ProjectQuickAccess = {
+  id: string;
+  label: string;
+  description: string;
+  icon: string;
 };
 
 type ProjectTreeProps = {
   projectName: string;
-  sections: ProjectTreeSection[];
+  accesses: ProjectQuickAccess[];
+  onAccess?: (access: ProjectQuickAccess) => void;
 };
 
-export function ProjectTree({ projectName, sections }: ProjectTreeProps) {
+export function ProjectTree({ projectName, accesses, onAccess }: ProjectTreeProps) {
   return (
-    <section className="project-tree" aria-labelledby="project-tree-title">
+    <section className="project-tree" aria-labelledby="project-access-title">
       <div className="project-tree-heading">
-        <span>Carte du projet</span>
-        <strong>Lecture seule</strong>
+        <span>Entrer dans le projet</span>
+        <strong>{projectName}</strong>
       </div>
 
-      <div className="project-tree-root">
-        <span className="project-tree-root-icon" aria-hidden="true">
-          ◇
-        </span>
-        <h2 id="project-tree-title">{projectName}</h2>
-      </div>
+      <h2 id="project-access-title">Accès rapides</h2>
+      <p className="project-tree-intro">
+        Ouvrir directement les outils et emplacements utiles.
+      </p>
 
-      <ul className="project-tree-sections">
-        {sections.map((section) => (
-          <li className="project-tree-section" key={section.name}>
-            <div className="project-tree-folder">
-              <span aria-hidden="true">▾</span>
-              <strong>{section.name}</strong>
-              <small>{section.items.length}</small>
-            </div>
-
-            <ul className="project-tree-items">
-              {section.items.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
+      <ul className="project-tree-actions">
+        {accesses.map((access) => (
+          <li key={access.id}>
+            <button type="button" onClick={() => onAccess?.(access)}>
+              <span className="project-tree-action-icon" aria-hidden="true">
+                {access.icon}
+              </span>
+              <span>
+                <strong>{access.label}</strong>
+                <small>{access.description}</small>
+              </span>
+              <span className="project-tree-action-arrow" aria-hidden="true">
+                ↗
+              </span>
+            </button>
           </li>
         ))}
       </ul>

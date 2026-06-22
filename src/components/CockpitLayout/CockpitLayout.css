@@ -1,0 +1,64 @@
+.cockpit-layout {
+  display: grid;
+  grid-template-areas:
+    "navigation projects context"
+    "navigation access context";
+  grid-template-columns: minmax(250px, 0.72fr) minmax(650px, 2.1fr) minmax(360px, 1fr);
+  grid-template-rows: auto 1fr;
+  gap: 20px;
+  align-items: stretch;
+  min-height: calc(100vh - 32px);
+}
+
+.cockpit-layout-navigation,
+.cockpit-layout-projects,
+.cockpit-layout-access,
+.cockpit-layout-context {
+  min-width: 0;
+}
+
+.cockpit-layout-navigation {
+  grid-area: navigation;
+}
+
+.cockpit-layout-projects {
+  grid-area: projects;
+}
+
+.cockpit-layout-access {
+  grid-area: access;
+}
+
+.cockpit-layout-context {
+  grid-area: context;
+}
+
+@media (max-width: 1510px) {
+  .cockpit-layout {
+    grid-template-columns: minmax(180px, 0.72fr) minmax(520px, 2.1fr) minmax(260px, 1fr);
+    gap: 14px;
+  }
+}
+
+@media (max-width: 1050px) {
+  .cockpit-layout {
+    grid-template-areas:
+      "navigation projects"
+      "navigation access"
+      "context context";
+    grid-template-columns: minmax(220px, 0.7fr) minmax(0, 2fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .cockpit-layout {
+    grid-template-areas:
+      "navigation"
+      "projects"
+      "access"
+      "context";
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    min-height: 0;
+  }
+}

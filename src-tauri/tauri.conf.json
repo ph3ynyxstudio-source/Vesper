@@ -12,9 +12,24 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "vesper",
         "width": 800,
         "height": 600
+      },
+      {
+        "label": "vesperion",
+        "title": "VESPΣRION",
+        "url": "index.html?window=vesperion",
+        "width": 180,
+        "height": 210,
+        "resizable": false,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "shadow": false,
+        "focus": false
       }
     ],
     "security": {

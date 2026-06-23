@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import {
   PhysicalPosition,
   currentMonitor,
@@ -16,6 +17,11 @@ const positionStorageKey = "vesperion-window-position";
 type StoredPosition = {
   x: number;
   y: number;
+};
+
+type VesperionFeedback = {
+  status: "success" | "error";
+  accessLabel: string;
 };
 
 function readStoredPosition(): StoredPosition | null {
@@ -37,8 +43,40 @@ function readStoredPosition(): StoredPosition | null {
 export function VesperionOverlay() {
   const [animation, setAnimation] = useState<VesperionAnimation>("idle");
   const [isDragging, setIsDragging] = useState(false);
+  const [feedback, setFeedback] = useState<VesperionFeedback | null>(null);
   const dragging = useRef(false);
   const lastX = useRef<number | null>(null);
+  const feedbackTimeout = useRef<number | undefined>(undefined);
+
+  useEffect(() => {
+    let disposed = false;
+    let stopListening: (() => void) | undefined;
+
+    void listen<VesperionFeedback>("vesperion-feedback", ({ payload }) => {
+      if (
+        (payload.status !== "success" && payload.status !== "error") ||
+        typeof payload.accessLabel !== "string"
+      ) {
+        return;
+      }
+
+      setFeedback(payload);
+      window.clearTimeout(feedbackTimeout.current);
+      feedbackTimeout.current = window.setTimeout(
+        () => setFeedback(null),
+        payload.status === "success" ? 3000 : 5000,
+      );
+    }).then((unlisten) => {
+      if (disposed) unlisten();
+      else stopListening = unlisten;
+    });
+
+    return () => {
+      disposed = true;
+      window.clearTimeout(feedbackTimeout.current);
+      stopListening?.();
+    };
+  }, []);
 
   useEffect(() => {
     const overlayWindow = getCurrentWindow();
@@ -124,6 +162,16 @@ export function VesperionOverlay() {
 
   return (
     <main className="vesperion-overlay">
+      {feedback ? (
+        <div
+          className={`vesperion-feedback is-${feedback.status}`}
+          role="status"
+          aria-live="polite"
+        >
+          <strong>{feedback.status === "success" ? "Ouvert" : "Échec"}</strong>
+          <span>{feedback.accessLabel}</span>
+        </div>
+      ) : null}
       <VesperionPet
         animation={animation}
         dragging={isDragging}

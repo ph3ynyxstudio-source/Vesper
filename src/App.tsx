@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { emitTo } from "@tauri-apps/api/event";
 import { CockpitLayout } from "./components/CockpitLayout/CockpitLayout";
 import { ContextPanel } from "./components/ContextPanel/ContextPanel";
 import {
@@ -20,13 +22,13 @@ type MockProject = {
   description: string;
   status: ProjectStatus;
   lastSession: string;
-  path: string;
+  locationLabel: string;
   summary: string;
   sessionEnd: string;
   accesses: ProjectQuickAccess[];
 };
 
-const projectAccesses: ProjectQuickAccess[] = [
+const unavailableProjectAccesses: ProjectQuickAccess[] = [
   { id: "vscode", label: "Ouvrir dans VS Code", description: "Workspace du projet", icon: "⌁" },
   { id: "github", label: "Repository GitHub", description: "Dépôt dans le navigateur", icon: "◇" },
   { id: "terminal", label: "Ouvrir le terminal", description: "Dossier courant", icon: ">_" },
@@ -34,6 +36,17 @@ const projectAccesses: ProjectQuickAccess[] = [
   { id: "assets", label: "Dossier assets/", description: "Identité et ressources", icon: "▧" },
   { id: "docs", label: "Dossier docs/", description: "Documentation du projet", icon: "≡" },
   { id: "sessions", label: "Sessions chr0", description: "Mémoire récente", icon: "↻" },
+  { id: "exports", label: "Exports", description: "Synthèses et sorties", icon: "⇱" },
+];
+
+const lunarmoodAccesses: ProjectQuickAccess[] = [
+  { id: "vscode", label: "Ouvrir dans VS Code", description: "Workspace du projet", icon: "⌁" },
+  { id: "github", label: "Repository GitHub", description: "Dépôt dans le navigateur", icon: "◇", destinationId: "lunarmood_github" },
+  { id: "terminal", label: "Ouvrir le terminal", description: "Dossier courant", icon: ">_" },
+  { id: "root", label: "Dossier racine", description: "Explorateur local", icon: "□", destinationId: "lunarmood_root" },
+  { id: "assets", label: "Dossier assets/", description: "Identité et ressources", icon: "▧", destinationId: "lunarmood_assets" },
+  { id: "docs", label: "Dossier docs/", description: "Documentation du projet", icon: "≡", destinationId: "lunarmood_docs" },
+  { id: "sessions", label: "Sessions chr0", description: "Mémoire récente", icon: "↻", destinationId: "lunarmood_sessions" },
   { id: "exports", label: "Exports", description: "Synthèses et sorties", icon: "⇱" },
 ];
 
@@ -53,10 +66,10 @@ const projects: MockProject[] = [
     description: "Journal émotionnel local-first.",
     status: "active",
     lastSession: "2026-06-21",
-    path: "C:\\Ph3yNyx.OS\\Devs\\LunarMood",
+    locationLabel: "Destination locale sécurisée",
     summary: "Suivi local des humeurs, cycles et notes quotidiennes.",
     sessionEnd: "Navigation principale validée. Prochaine étape : consolider les vues de synthèse.",
-    accesses: projectAccesses,
+    accesses: lunarmoodAccesses,
   },
   {
     name: "chr0",
@@ -65,10 +78,10 @@ const projects: MockProject[] = [
     description: "Mémoire projet et synthèses.",
     status: "active",
     lastSession: "2026-06-22",
-    path: "C:\\Ph3yNyx.OS\\Devs\\chr0",
+    locationLabel: "Non configuré",
     summary: "Capture les sessions de travail et maintient la mémoire des projets PH3YNYX.OS.",
     sessionEnd: "Pipeline de synthèse stabilisé. Les sorties restent validées manuellement.",
-    accesses: projectAccesses,
+    accesses: unavailableProjectAccesses,
   },
   {
     name: "VespΣr",
@@ -77,10 +90,10 @@ const projects: MockProject[] = [
     description: "Cockpit de contexte.",
     status: "concept",
     lastSession: "Aujourd'hui",
-    path: "C:\\Ph3yNyx.OS\\Devs\\Vesper",
+    locationLabel: "Non configuré",
     summary: "Cockpit local-first pour retrouver les projets, leur documentation et leur contexte.",
     sessionEnd: "Structure visuelle initiale en cours. Backend volontairement hors périmètre.",
-    accesses: projectAccesses,
+    accesses: unavailableProjectAccesses,
   },
 ];
 
@@ -122,7 +135,7 @@ function App() {
       [
       activeProject.name,
       activeProject.summary,
-      `Chemin : ${activeProject.path}`,
+      `Emplacement : ${activeProject.locationLabel}`,
       `Dernière session : ${activeProject.lastSession}`,
       ].join("\n\n"),
       setContextCopyState,
@@ -142,7 +155,29 @@ function App() {
     setSessionCopyState("idle");
   }
 
-  function runMockAction() {}
+  async function notifyVesperion(
+    status: "success" | "error",
+    accessLabel: string,
+  ) {
+    try {
+      await emitTo("vesperion", "vesperion-feedback", { status, accessLabel });
+    } catch (error: unknown) {
+      console.error("Unable to notify VESPΣRION", error);
+    }
+  }
+
+  async function openProjectAccess(access: ProjectQuickAccess) {
+    if (!access.destinationId) return;
+
+    try {
+      await invoke("open_known_destination", {
+        destinationId: access.destinationId,
+      });
+      await notifyVesperion("success", access.label);
+    } catch {
+      await notifyVesperion("error", access.label);
+    }
+  }
 
   return (
     <main className="vesper-app">
@@ -160,9 +195,10 @@ function App() {
               <ul>
                 {globalAccesses.map((access) => (
                   <li key={access.label}>
-                    <button type="button" onClick={runMockAction}>
+                    <button type="button" disabled>
                       <span aria-hidden="true">{access.icon}</span>
-                      {access.label}
+                      <span>{access.label}</span>
+                      <small>Bientôt</small>
                     </button>
                   </li>
                 ))}
@@ -218,7 +254,7 @@ function App() {
           <ProjectTree
             projectName={activeProject.name}
             accesses={activeProject.accesses}
-            onAccess={runMockAction}
+            onAccess={openProjectAccess}
           />
         }
         contextPanel={
@@ -226,7 +262,7 @@ function App() {
             name={activeProject.name}
             type={activeProject.type}
             status={activeProject.status}
-            path={activeProject.path}
+            locationLabel={activeProject.locationLabel}
             lastSession={activeProject.lastSession}
             summary={activeProject.summary}
             sessionEnd={activeProject.sessionEnd}

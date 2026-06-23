@@ -16,3 +16,48 @@ html.vesperion-overlay-document #root {
   height: 100%;
   background: transparent;
 }
+
+.vesperion-overlay .vesperion-pet-shell {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+}
+
+.vesperion-feedback {
+  position: absolute;
+  top: 18px;
+  left: 12px;
+  z-index: 2;
+  display: grid;
+  width: 190px;
+  gap: 3px;
+  padding: 12px 14px;
+  border: 1px solid rgba(80, 210, 255, 0.5);
+  border-radius: 14px 14px 4px 14px;
+  color: #f7f8fc;
+  background: rgba(5, 14, 30, 0.94);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+.vesperion-feedback strong {
+  color: #50d2ff;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.vesperion-feedback span {
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vesperion-feedback.is-error {
+  border-color: rgba(248, 113, 113, 0.65);
+}
+
+.vesperion-feedback.is-error strong {
+  color: #f87171;
+}

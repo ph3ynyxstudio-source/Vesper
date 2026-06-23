@@ -5,7 +5,7 @@ type ContextPanelProps = {
   name: string;
   type: string;
   status: ProjectStatus;
-  path: string;
+  locationLabel: string;
   lastSession: string;
   summary: string;
   sessionEnd: string;
@@ -26,7 +26,7 @@ export function ContextPanel({
   name,
   type,
   status,
-  path,
+  locationLabel,
   lastSession,
   summary,
   sessionEnd,
@@ -67,8 +67,8 @@ export function ContextPanel({
           </dd>
         </div>
         <div className="context-panel-path">
-          <dt>Chemin local</dt>
-          <dd>{path}</dd>
+          <dt>Emplacement</dt>
+          <dd>{locationLabel}</dd>
         </div>
         <div>
           <dt>Dernière session</dt>

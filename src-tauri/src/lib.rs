@@ -1,39 +1,97 @@
+use tauri::{Emitter, Manager};
 use tauri_plugin_opener::OpenerExt;
 
-#[derive(Debug, PartialEq, Eq)]
-enum KnownDestination {
-    Url(&'static str),
-    Path(&'static str),
+const PROJECTS_ROOT: &str = r"C:\Ph3yNyx.OS\05_⭐VESPΣR";
+
+#[derive(Debug, serde::Serialize)]
+struct ProjectDirectory {
+    name: String,
+    path: String,
+    modified_at_epoch_seconds: Option<u64>,
 }
 
-fn resolve_known_destination(destination_id: &str) -> Result<KnownDestination, &'static str> {
-    match destination_id {
-        "lunarmood_github" => Ok(KnownDestination::Url(
-            "https://github.com/ph3ynyxstudio-source/Lun4rMood",
-        )),
-        "lunarmood_root" => Ok(KnownDestination::Path(r"C:\Ph3yNyx.OS\Devs\Lun4rMood")),
-        "lunarmood_assets" => Ok(KnownDestination::Path(
-            r"C:\Ph3yNyx.OS\02_🌙Lun△rMood\Lun△rMood Asset",
-        )),
-        "lunarmood_docs" => Ok(KnownDestination::Path(
-            r"C:\Ph3yNyx.OS\02_🌙Lun△rMood\Lun△rMood Docs",
-        )),
-        "lunarmood_sessions" => Ok(KnownDestination::Path(
-            r"C:\Ph3yNyx.OS\01_⏳↻hr0nosV3rs\AppData\chronosvers\data\projects\LunarMood",
-        )),
-        _ => Err("unknown_destination"),
-    }
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+struct CompanionSettings {
+    visible: bool,
+    shadow: bool,
 }
 
 #[tauri::command]
-fn open_known_destination(app: tauri::AppHandle, destination_id: &str) -> Result<(), &'static str> {
-    let destination = resolve_known_destination(destination_id)?;
-    let result = match destination {
-        KnownDestination::Url(url) => app.opener().open_url(url, None::<&str>),
-        KnownDestination::Path(path) => app.opener().open_path(path, None::<&str>),
-    };
+fn list_project_directories() -> Result<Vec<ProjectDirectory>, String> {
+    let root = std::path::Path::new(PROJECTS_ROOT);
+    let entries = std::fs::read_dir(root).map_err(|error| error.to_string())?;
+    let mut projects = Vec::new();
 
-    result.map_err(|_| "open_failed")
+    for entry in entries {
+        let entry = entry.map_err(|error| error.to_string())?;
+        let file_type = entry.file_type().map_err(|error| error.to_string())?;
+
+        if !file_type.is_dir() {
+            continue;
+        }
+
+        let metadata = entry.metadata().ok();
+        let modified_at_epoch_seconds = metadata
+            .and_then(|value| value.modified().ok())
+            .and_then(|value| {
+                value
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .ok()
+                    .map(|duration| duration.as_secs())
+            });
+
+        projects.push(ProjectDirectory {
+            name: entry.file_name().to_string_lossy().into_owned(),
+            path: entry.path().to_string_lossy().into_owned(),
+            modified_at_epoch_seconds,
+        });
+    }
+
+    projects.sort_by(|left, right| left.name.to_lowercase().cmp(&right.name.to_lowercase()));
+    Ok(projects)
+}
+
+#[tauri::command]
+fn open_project_directory(app: tauri::AppHandle, path: &str) -> Result<(), &'static str> {
+    let requested_path = std::path::Path::new(path);
+    let root = std::path::Path::new(PROJECTS_ROOT);
+    let requested_path = requested_path.canonicalize().map_err(|_| "invalid_path")?;
+    let root = root.canonicalize().map_err(|_| "invalid_root")?;
+
+    if !requested_path.starts_with(&root) {
+        return Err("path_outside_projects_root");
+    }
+
+    if !requested_path.is_dir() {
+        return Err("not_a_directory");
+    }
+
+    app.opener()
+        .open_path(requested_path.to_string_lossy().as_ref(), None::<&str>)
+        .map_err(|_| "open_failed")
+}
+
+#[tauri::command]
+fn apply_companion_settings(
+    app: tauri::AppHandle,
+    settings: CompanionSettings,
+) -> Result<(), &'static str> {
+    let window = app
+        .get_webview_window("vesperion")
+        .ok_or("vesperion_window_missing")?;
+
+    if settings.visible {
+        window.show().map_err(|_| "show_failed")?;
+    }
+
+    app.emit_to("vesperion", "vesperion-settings", settings.clone())
+        .map_err(|_| "emit_failed")?;
+
+    if !settings.visible {
+        window.hide().map_err(|_| "hide_failed")?;
+    }
+
+    Ok(())
 }
 
 #[tauri::command]
@@ -97,61 +155,10 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             greet,
             drag_vesperion,
-            open_known_destination
+            list_project_directories,
+            open_project_directory,
+            apply_companion_settings
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{resolve_known_destination, KnownDestination};
-
-    #[test]
-    fn resolves_every_lunarmood_destination() {
-        assert_eq!(
-            resolve_known_destination("lunarmood_github"),
-            Ok(KnownDestination::Url(
-                "https://github.com/ph3ynyxstudio-source/Lun4rMood"
-            ))
-        );
-        assert_eq!(
-            resolve_known_destination("lunarmood_root"),
-            Ok(KnownDestination::Path(r"C:\Ph3yNyx.OS\Devs\Lun4rMood"))
-        );
-        assert_eq!(
-            resolve_known_destination("lunarmood_assets"),
-            Ok(KnownDestination::Path(
-                r"C:\Ph3yNyx.OS\02_🌙Lun△rMood\Lun△rMood Asset"
-            ))
-        );
-        assert_eq!(
-            resolve_known_destination("lunarmood_docs"),
-            Ok(KnownDestination::Path(
-                r"C:\Ph3yNyx.OS\02_🌙Lun△rMood\Lun△rMood Docs"
-            ))
-        );
-        assert_eq!(
-            resolve_known_destination("lunarmood_sessions"),
-            Ok(KnownDestination::Path(
-                r"C:\Ph3yNyx.OS\01_⏳↻hr0nosV3rs\AppData\chronosvers\data\projects\LunarMood"
-            ))
-        );
-    }
-
-    #[test]
-    fn rejects_unknown_and_path_like_values() {
-        assert_eq!(
-            resolve_known_destination("unknown"),
-            Err("unknown_destination")
-        );
-        assert_eq!(
-            resolve_known_destination(r"C:\Windows\System32"),
-            Err("unknown_destination")
-        );
-        assert_eq!(
-            resolve_known_destination("https://example.com"),
-            Err("unknown_destination")
-        );
-    }
 }

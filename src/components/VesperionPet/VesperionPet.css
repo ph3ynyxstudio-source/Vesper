@@ -22,6 +22,14 @@
   transform: translateY(-4px) scale(1.03);
 }
 
+.vesperion-pet-shell.no-shadow {
+  filter: none;
+}
+
+.vesperion-pet-shell.no-shadow.is-dragging {
+  filter: none;
+}
+
 .vesperion-pet {
   width: 144px;
   height: 156px;

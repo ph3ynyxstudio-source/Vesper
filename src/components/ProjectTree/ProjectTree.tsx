@@ -5,15 +5,8 @@ export type ProjectQuickAccess = {
   label: string;
   description: string;
   icon: string;
-  destinationId?: KnownDestinationId;
+  destinationPath?: string;
 };
-
-export type KnownDestinationId =
-  | "lunarmood_github"
-  | "lunarmood_root"
-  | "lunarmood_assets"
-  | "lunarmood_docs"
-  | "lunarmood_sessions";
 
 type ProjectTreeProps = {
   projectName: string;
@@ -40,7 +33,7 @@ export function ProjectTree({ projectName, accesses, onAccess }: ProjectTreeProp
             <button
               type="button"
               onClick={() => onAccess?.(access)}
-              disabled={!access.destinationId}
+              disabled={!access.destinationPath}
             >
               <span className="project-tree-action-icon" aria-hidden="true">
                 {access.icon}
@@ -48,7 +41,7 @@ export function ProjectTree({ projectName, accesses, onAccess }: ProjectTreeProp
               <span>
                 <strong>{access.label}</strong>
                 <small>
-                  {access.destinationId ? access.description : "Bientôt"}
+                  {access.destinationPath ? access.description : "Bientôt"}
                 </small>
               </span>
               <span className="project-tree-action-arrow" aria-hidden="true">

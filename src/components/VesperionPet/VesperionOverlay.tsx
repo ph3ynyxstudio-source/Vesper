@@ -13,10 +13,16 @@ import {
 import "./VesperionOverlay.css";
 
 const positionStorageKey = "vesperion-window-position";
+const companionSettingsStorageKey = "vesperion-companion-settings";
 
 type StoredPosition = {
   x: number;
   y: number;
+};
+
+type CompanionSettings = {
+  visible: boolean;
+  shadow: boolean;
 };
 
 type VesperionFeedback = {
@@ -40,10 +46,29 @@ function readStoredPosition(): StoredPosition | null {
   }
 }
 
+function readCompanionSettings(): CompanionSettings {
+  try {
+    const storedSettings = localStorage.getItem(companionSettingsStorageKey);
+    if (!storedSettings) return { visible: true, shadow: true };
+
+    const settings = JSON.parse(storedSettings) as Partial<CompanionSettings>;
+
+    return {
+      visible: typeof settings.visible === "boolean" ? settings.visible : true,
+      shadow: typeof settings.shadow === "boolean" ? settings.shadow : true,
+    };
+  } catch {
+    return { visible: true, shadow: true };
+  }
+}
+
 export function VesperionOverlay() {
   const [animation, setAnimation] = useState<VesperionAnimation>("idle");
   const [isDragging, setIsDragging] = useState(false);
   const [feedback, setFeedback] = useState<VesperionFeedback | null>(null);
+  const [companionSettings, setCompanionSettings] = useState(
+    readCompanionSettings,
+  );
   const dragging = useRef(false);
   const lastX = useRef<number | null>(null);
   const feedbackTimeout = useRef<number | undefined>(undefined);
@@ -74,6 +99,30 @@ export function VesperionOverlay() {
     return () => {
       disposed = true;
       window.clearTimeout(feedbackTimeout.current);
+      stopListening?.();
+    };
+  }, []);
+
+  useEffect(() => {
+    let disposed = false;
+    let stopListening: (() => void) | undefined;
+
+    void listen<CompanionSettings>("vesperion-settings", ({ payload }) => {
+      if (
+        typeof payload.visible !== "boolean" ||
+        typeof payload.shadow !== "boolean"
+      ) {
+        return;
+      }
+
+      setCompanionSettings(payload);
+    }).then((unlisten) => {
+      if (disposed) unlisten();
+      else stopListening = unlisten;
+    });
+
+    return () => {
+      disposed = true;
       stopListening?.();
     };
   }, []);
@@ -172,11 +221,14 @@ export function VesperionOverlay() {
           <span>{feedback.accessLabel}</span>
         </div>
       ) : null}
-      <VesperionPet
-        animation={animation}
-        dragging={isDragging}
-        onPointerDown={startDragging}
-      />
+      {companionSettings.visible ? (
+        <VesperionPet
+          animation={animation}
+          dragging={isDragging}
+          shadow={companionSettings.shadow}
+          onPointerDown={startDragging}
+        />
+      ) : null}
     </main>
   );
 }

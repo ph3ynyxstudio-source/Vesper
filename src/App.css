@@ -112,6 +112,81 @@ button {
   font-size: 16px;
 }
 
+.project-heading-actions {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.project-heading-actions > span {
+  display: grid;
+  place-items: center;
+  width: 37px;
+  height: 37px;
+  border: 1px solid var(--border-soft);
+  border-radius: 50%;
+  color: var(--accent-blue);
+  font-size: 16px;
+}
+
+.companion-settings {
+  position: relative;
+}
+
+.companion-settings-trigger {
+  min-height: 31px;
+  padding: 0 12px;
+  border: 1px solid rgba(250, 204, 21, 0.52);
+  border-radius: 8px;
+  color: #facc15;
+  background: rgba(250, 204, 21, 0.07);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.companion-settings-trigger:hover,
+.companion-settings-trigger:focus-visible {
+  border-color: rgba(250, 204, 21, 0.82);
+  background: rgba(250, 204, 21, 0.12);
+  outline: none;
+}
+
+.companion-settings-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 12;
+  display: grid;
+  width: 190px;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(250, 204, 21, 0.42);
+  border-radius: 8px;
+  background: rgba(5, 14, 30, 0.98);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.38);
+}
+
+.companion-settings-panel label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 32px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.companion-settings-panel input {
+  width: 34px;
+  height: 18px;
+  accent-color: #facc15;
+  cursor: pointer;
+}
+
 .project-list {
   display: grid;
   gap: 19px;
@@ -119,6 +194,16 @@ button {
 
 .project-list .project-card {
   min-height: 0;
+}
+
+.project-list-message {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 18px;
+  border: 1px dashed var(--border-soft);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  background: rgba(80, 210, 255, 0.04);
 }
 
 .vesper-app {
@@ -393,6 +478,18 @@ button {
     width: 24px;
     height: 24px;
     font-size: 11px;
+  }
+
+  .project-heading-actions > span {
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
+  }
+
+  .companion-settings-trigger {
+    min-height: 24px;
+    padding-inline: 8px;
+    font-size: 9px;
   }
 
   .project-list {

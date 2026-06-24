@@ -42,12 +42,14 @@ type VesperionStyle = CSSProperties & {
 type VesperionPetProps = {
   animation?: VesperionAnimation;
   dragging?: boolean;
+  shadow?: boolean;
   onPointerDown?: PointerEventHandler<HTMLDivElement>;
 };
 
 export function VesperionPet({
   animation = "idle",
   dragging = false,
+  shadow = true,
   onPointerDown,
 }: VesperionPetProps) {
   const [frame, setFrame] = useState(0);
@@ -91,7 +93,13 @@ export function VesperionPet({
 
   return (
     <div
-      className={`vesperion-pet-shell${dragging ? " is-dragging" : ""}`}
+      className={[
+        "vesperion-pet-shell",
+        dragging ? "is-dragging" : "",
+        shadow ? "" : "no-shadow",
+      ]
+        .filter(Boolean)
+        .join(" ")}
       role="img"
       aria-label="VESPΣRION, compagnon de VespΣr"
       onPointerDown={onPointerDown}

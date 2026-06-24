@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { emitTo } from "@tauri-apps/api/event";
 import { CockpitLayout } from "./components/CockpitLayout/CockpitLayout";
@@ -15,7 +15,18 @@ import "./App.css";
 
 type CopyState = "idle" | "copied" | "error";
 
-type MockProject = {
+type CompanionSettings = {
+  visible: boolean;
+  shadow: boolean;
+};
+
+type ProjectDirectory = {
+  name: string;
+  path: string;
+  modified_at_epoch_seconds?: number;
+};
+
+type LocalProject = {
   name: string;
   icon: string;
   type: string;
@@ -28,27 +39,8 @@ type MockProject = {
   accesses: ProjectQuickAccess[];
 };
 
-const unavailableProjectAccesses: ProjectQuickAccess[] = [
-  { id: "vscode", label: "Ouvrir dans VS Code", description: "Workspace du projet", icon: "⌁" },
-  { id: "github", label: "Repository GitHub", description: "Dépôt dans le navigateur", icon: "◇" },
-  { id: "terminal", label: "Ouvrir le terminal", description: "Dossier courant", icon: ">_" },
-  { id: "root", label: "Dossier racine", description: "Explorateur local", icon: "□" },
-  { id: "assets", label: "Dossier assets/", description: "Identité et ressources", icon: "▧" },
-  { id: "docs", label: "Dossier docs/", description: "Documentation du projet", icon: "≡" },
-  { id: "sessions", label: "Sessions chr0", description: "Mémoire récente", icon: "↻" },
-  { id: "exports", label: "Exports", description: "Synthèses et sorties", icon: "⇱" },
-];
-
-const lunarmoodAccesses: ProjectQuickAccess[] = [
-  { id: "vscode", label: "Ouvrir dans VS Code", description: "Workspace du projet", icon: "⌁" },
-  { id: "github", label: "Repository GitHub", description: "Dépôt dans le navigateur", icon: "◇", destinationId: "lunarmood_github" },
-  { id: "terminal", label: "Ouvrir le terminal", description: "Dossier courant", icon: ">_" },
-  { id: "root", label: "Dossier racine", description: "Explorateur local", icon: "□", destinationId: "lunarmood_root" },
-  { id: "assets", label: "Dossier assets/", description: "Identité et ressources", icon: "▧", destinationId: "lunarmood_assets" },
-  { id: "docs", label: "Dossier docs/", description: "Documentation du projet", icon: "≡", destinationId: "lunarmood_docs" },
-  { id: "sessions", label: "Sessions chr0", description: "Mémoire récente", icon: "↻", destinationId: "lunarmood_sessions" },
-  { id: "exports", label: "Exports", description: "Synthèses et sorties", icon: "⇱" },
-];
+const projectsRoot = "C:\\Ph3yNyx.OS\\05_⭐VESPΣR";
+const companionSettingsStorageKey = "vesperion-companion-settings";
 
 const globalAccesses = [
   { label: "Obsidian", icon: "◈" },
@@ -58,51 +50,132 @@ const globalAccesses = [
   { label: "Terminal", icon: ">_" },
 ] as const;
 
-const projects: MockProject[] = [
-  {
-    name: "Lun△rMood",
-    icon: "☾",
-    type: "Flutter",
-    description: "Journal émotionnel local-first.",
+function readCompanionSettings(): CompanionSettings {
+  try {
+    const storedSettings = localStorage.getItem(companionSettingsStorageKey);
+    if (!storedSettings) return { visible: true, shadow: true };
+
+    const parsedSettings = JSON.parse(storedSettings) as Partial<CompanionSettings>;
+
+    return {
+      visible:
+        typeof parsedSettings.visible === "boolean"
+          ? parsedSettings.visible
+          : true,
+      shadow:
+        typeof parsedSettings.shadow === "boolean" ? parsedSettings.shadow : true,
+    };
+  } catch {
+    return { visible: true, shadow: true };
+  }
+}
+
+function formatModifiedDate(epochSeconds?: number) {
+  if (!epochSeconds) return "Non disponible";
+
+  return new Intl.DateTimeFormat("fr-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(epochSeconds * 1000));
+}
+
+function getProjectIcon(name: string) {
+  if (name.toLowerCase().includes("vesp")) return "✦";
+  return "□";
+}
+
+function toLocalProject(directory: ProjectDirectory): LocalProject {
+  const lastSession = formatModifiedDate(directory.modified_at_epoch_seconds);
+
+  return {
+    name: directory.name,
+    icon: getProjectIcon(directory.name),
+    type: "Dossier local",
+    description: "Projet reflété depuis le dossier VESPΣR.",
     status: "active",
-    lastSession: "2026-06-21",
-    locationLabel: "Destination locale sécurisée",
-    summary: "Suivi local des humeurs, cycles et notes quotidiennes.",
-    sessionEnd: "Navigation principale validée. Prochaine étape : consolider les vues de synthèse.",
-    accesses: lunarmoodAccesses,
-  },
-  {
-    name: "chr0",
-    icon: "↻",
-    type: "Tauri",
-    description: "Mémoire projet et synthèses.",
-    status: "active",
-    lastSession: "2026-06-22",
-    locationLabel: "Non configuré",
-    summary: "Capture les sessions de travail et maintient la mémoire des projets PH3YNYX.OS.",
-    sessionEnd: "Pipeline de synthèse stabilisé. Les sorties restent validées manuellement.",
-    accesses: unavailableProjectAccesses,
-  },
-  {
-    name: "VespΣr",
-    icon: "✦",
-    type: "Tauri",
-    description: "Cockpit de contexte.",
-    status: "concept",
-    lastSession: "Aujourd'hui",
-    locationLabel: "Non configuré",
-    summary: "Cockpit local-first pour retrouver les projets, leur documentation et leur contexte.",
-    sessionEnd: "Structure visuelle initiale en cours. Backend volontairement hors périmètre.",
-    accesses: unavailableProjectAccesses,
-  },
-];
+    lastSession,
+    locationLabel: directory.path,
+    summary: `Dossier projet présent dans ${projectsRoot}.`,
+    sessionEnd: `Dernier état local observé : ${lastSession}.`,
+    accesses: [
+      {
+        id: "root",
+        label: "Dossier racine",
+        description: directory.path,
+        icon: "□",
+        destinationPath: directory.path,
+      },
+    ],
+  };
+}
 
 function App() {
-  const [activeProjectName, setActiveProjectName] = useState(projects[0].name);
+  const [projects, setProjects] = useState<LocalProject[]>([]);
+  const [activeProjectName, setActiveProjectName] = useState<string>();
+  const [projectLoadState, setProjectLoadState] =
+    useState<"loading" | "ready" | "error">("loading");
+  const [companionSettings, setCompanionSettings] = useState(
+    readCompanionSettings,
+  );
+  const [isCompanionPanelOpen, setIsCompanionPanelOpen] = useState(false);
   const [contextCopyState, setContextCopyState] = useState<CopyState>("idle");
   const [sessionCopyState, setSessionCopyState] = useState<CopyState>("idle");
-  const activeProject =
-    projects.find((project) => project.name === activeProjectName) ?? projects[0];
+  const activeProject = useMemo(
+    () =>
+      projects.find((project) => project.name === activeProjectName) ??
+      projects[0],
+    [activeProjectName, projects],
+  );
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadProjects() {
+      try {
+        const directories = await invoke<ProjectDirectory[]>(
+          "list_project_directories",
+        );
+        const nextProjects = directories.map(toLocalProject);
+
+        if (!isMounted) return;
+        setProjects(nextProjects);
+        setActiveProjectName((currentProjectName) => {
+          if (
+            currentProjectName &&
+            nextProjects.some((project) => project.name === currentProjectName)
+          ) {
+            return currentProjectName;
+          }
+
+          return nextProjects[0]?.name;
+        });
+        setProjectLoadState("ready");
+      } catch (error: unknown) {
+        console.error("Unable to read local project directories", error);
+        if (isMounted) setProjectLoadState("error");
+      }
+    }
+
+    loadProjects();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      companionSettingsStorageKey,
+      JSON.stringify(companionSettings),
+    );
+
+    void invoke("apply_companion_settings", {
+      settings: companionSettings,
+    }).catch((error: unknown) => {
+      console.error("Unable to apply VESPΣRION settings", error);
+    });
+  }, [companionSettings]);
 
   function fallbackCopyText(value: string) {
     const textarea = document.createElement("textarea");
@@ -131,6 +204,8 @@ function App() {
   }
 
   function copyProjectContext() {
+    if (!activeProject) return;
+
     return copyText(
       [
       activeProject.name,
@@ -143,6 +218,8 @@ function App() {
   }
 
   function copySessionMarkdown() {
+    if (!activeProject) return;
+
     return copyText(
       `# Fin de session — ${activeProject.name}\n\n${activeProject.sessionEnd}`,
       setSessionCopyState,
@@ -153,6 +230,16 @@ function App() {
     setActiveProjectName(projectName);
     setContextCopyState("idle");
     setSessionCopyState("idle");
+  }
+
+  function updateCompanionSetting<Key extends keyof CompanionSettings>(
+    key: Key,
+    value: CompanionSettings[Key],
+  ) {
+    setCompanionSettings((currentSettings) => ({
+      ...currentSettings,
+      [key]: value,
+    }));
   }
 
   async function notifyVesperion(
@@ -167,17 +254,30 @@ function App() {
   }
 
   async function openProjectAccess(access: ProjectQuickAccess) {
-    if (!access.destinationId) return;
+    if (!access.destinationPath) return;
 
     try {
-      await invoke("open_known_destination", {
-        destinationId: access.destinationId,
+      await invoke("open_project_directory", {
+        path: access.destinationPath,
       });
       await notifyVesperion("success", access.label);
     } catch {
       await notifyVesperion("error", access.label);
     }
   }
+
+  const activeProjectCount = projects.filter(
+    (project) => project.status === "active",
+  ).length;
+  const pauseProjectCount = projects.filter(
+    (project) => project.status === "pause",
+  ).length;
+  const conceptProjectCount = projects.filter(
+    (project) => project.status === "concept",
+  ).length;
+  const archivedProjectCount = projects.filter(
+    (project) => project.status === "archived",
+  ).length;
 
   return (
     <main className="vesper-app">
@@ -208,10 +308,10 @@ function App() {
             <section className="project-status-legend" aria-labelledby="project-status-title">
               <h2 id="project-status-title">Projets</h2>
               <ul>
-                <li><span className="active" />Actifs<strong>2</strong></li>
-                <li><span className="pause" />En pause<strong>0</strong></li>
-                <li><span className="concept" />Concepts / futurs<strong>1</strong></li>
-                <li><span className="archived" />Archivés<strong>0</strong></li>
+                <li><span className="active" />Actifs<strong>{activeProjectCount}</strong></li>
+                <li><span className="pause" />En pause<strong>{pauseProjectCount}</strong></li>
+                <li><span className="concept" />Concepts / futurs<strong>{conceptProjectCount}</strong></li>
+                <li><span className="archived" />Archivés<strong>{archivedProjectCount}</strong></li>
               </ul>
             </section>
 
@@ -228,12 +328,71 @@ function App() {
                 <span>Écosystème local</span>
                 <h2 id="projects-title">Projets</h2>
               </div>
-              <span aria-label={`${projects.length} projets`}>
-                {projects.length}
-              </span>
+              <div className="project-heading-actions">
+                <div className="companion-settings">
+                  <button
+                    className="companion-settings-trigger"
+                    type="button"
+                    aria-expanded={isCompanionPanelOpen}
+                    onClick={() =>
+                      setIsCompanionPanelOpen((isOpen) => !isOpen)
+                    }
+                  >
+                    Compagnon
+                  </button>
+
+                  {isCompanionPanelOpen ? (
+                    <div className="companion-settings-panel">
+                      <label>
+                        <span>Afficher</span>
+                        <input
+                          type="checkbox"
+                          checked={companionSettings.visible}
+                          onChange={(event) =>
+                            updateCompanionSetting(
+                              "visible",
+                              event.currentTarget.checked,
+                            )
+                          }
+                        />
+                      </label>
+                      <label>
+                        <span>Ombre</span>
+                        <input
+                          type="checkbox"
+                          checked={companionSettings.shadow}
+                          onChange={(event) =>
+                            updateCompanionSetting(
+                              "shadow",
+                              event.currentTarget.checked,
+                            )
+                          }
+                        />
+                      </label>
+                    </div>
+                  ) : null}
+                </div>
+
+                <span aria-label={`${projects.length} projets`}>
+                  {projects.length}
+                </span>
+              </div>
             </div>
 
             <div className="project-list">
+              {projectLoadState === "loading" ? (
+                <p className="project-list-message">Lecture des dossiers locaux...</p>
+              ) : null}
+              {projectLoadState === "error" ? (
+                <p className="project-list-message">
+                  Impossible de lire {projectsRoot}.
+                </p>
+              ) : null}
+              {projectLoadState === "ready" && projects.length === 0 ? (
+                <p className="project-list-message">
+                  Aucun dossier projet dans {projectsRoot}.
+                </p>
+              ) : null}
               {projects.map((project) => (
                 <ProjectCard
                   key={project.name}
@@ -243,7 +402,7 @@ function App() {
                   description={project.description}
                   status={project.status}
                   lastSession={project.lastSession}
-                  isActive={project.name === activeProject.name}
+                  isActive={project.name === activeProject?.name}
                   onClick={() => selectProject(project.name)}
                 />
               ))}
@@ -251,26 +410,30 @@ function App() {
           </>
         }
         projectAccess={
-          <ProjectTree
-            projectName={activeProject.name}
-            accesses={activeProject.accesses}
-            onAccess={openProjectAccess}
-          />
+          activeProject ? (
+            <ProjectTree
+              projectName={activeProject.name}
+              accesses={activeProject.accesses}
+              onAccess={openProjectAccess}
+            />
+          ) : null
         }
         contextPanel={
-          <ContextPanel
-            name={activeProject.name}
-            type={activeProject.type}
-            status={activeProject.status}
-            locationLabel={activeProject.locationLabel}
-            lastSession={activeProject.lastSession}
-            summary={activeProject.summary}
-            sessionEnd={activeProject.sessionEnd}
-            contextCopyState={contextCopyState}
-            sessionCopyState={sessionCopyState}
-            onCopyContext={copyProjectContext}
-            onCopySession={copySessionMarkdown}
-          />
+          activeProject ? (
+            <ContextPanel
+              name={activeProject.name}
+              type={activeProject.type}
+              status={activeProject.status}
+              locationLabel={activeProject.locationLabel}
+              lastSession={activeProject.lastSession}
+              summary={activeProject.summary}
+              sessionEnd={activeProject.sessionEnd}
+              contextCopyState={contextCopyState}
+              sessionCopyState={sessionCopyState}
+              onCopyContext={copyProjectContext}
+              onCopySession={copySessionMarkdown}
+            />
+          ) : null
         }
       />
     </main>

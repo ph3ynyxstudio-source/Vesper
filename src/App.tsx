@@ -11,6 +11,7 @@ import {
   ProjectTree,
   type ProjectGenealogyBranch,
 } from "./components/ProjectTree/ProjectTree";
+import vesperionIcon from "./assets/vesperion-icon-512.png";
 import "./App.css";
 
 type CopyState = "idle" | "copied" | "error";
@@ -345,7 +346,14 @@ function App() {
           <div className="cockpit-navigation-content">
             <header className="cockpit-brand">
               <span>PH3YNYX.OS // COCKPIT</span>
-              <h1>VespΣr</h1>
+              <div className="cockpit-brand-title">
+                <img
+                  className="cockpit-brand-icon"
+                  src={vesperionIcon}
+                  alt="Icône VESPΣRION"
+                />
+                <h1>VespΣr</h1>
+              </div>
               <p>Context cockpit local-first</p>
             </header>
 

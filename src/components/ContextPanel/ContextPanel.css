@@ -269,7 +269,10 @@
 .context-panel {
   display: flex;
   flex-direction: column;
-  padding: 22px;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: 18px;
   border-radius: 22px;
 }
 
@@ -278,8 +281,8 @@
 }
 
 .context-panel h2 {
-  margin: 18px 0;
-  font-size: 28px;
+  margin: 14px 0;
+  font-size: 25px;
 }
 
 .context-panel-metadata {
@@ -308,8 +311,8 @@
 }
 
 .context-panel-section {
-  margin-top: 16px;
-  padding-top: 15px;
+  margin-top: 14px;
+  padding-top: 13px;
 }
 
 .context-panel-section h3 {
@@ -336,12 +339,12 @@
 }
 
 .context-panel-copy {
-  margin-top: 15px;
+  margin-top: 12px;
 }
 
 .context-panel-session {
-  margin-top: 20px;
-  padding: 14px;
+  margin-top: 14px;
+  padding: 12px;
   border-color: rgba(168, 85, 247, 0.25);
   border-radius: 13px;
 }
@@ -365,8 +368,8 @@
 }
 
 .context-panel-session pre {
-  max-height: 190px;
-  margin: 12px 0;
+  max-height: clamp(86px, 18vh, 170px);
+  margin: 10px 0;
   overflow: auto;
   color: var(--text-secondary);
   font-family: "Cascadia Code", Consolas, monospace;
@@ -396,13 +399,13 @@
 
 @media (max-width: 1510px) {
   .context-panel {
-    padding: 15px;
+    padding: 12px;
     border-radius: 16px;
   }
 
   .context-panel h2 {
-    margin: 11px 0;
-    font-size: 20px;
+    margin: 9px 0;
+    font-size: 18px;
   }
 
   .context-panel-metadata {
@@ -446,8 +449,8 @@
   }
 
   .context-panel-session {
-    margin-top: 12px;
-    padding: 10px;
+    margin-top: 10px;
+    padding: 9px;
   }
 
   .context-panel-session-heading {
@@ -455,7 +458,7 @@
   }
 
   .context-panel-session pre {
-    max-height: 126px;
+    max-height: clamp(68px, 16vh, 118px);
     margin: 8px 0;
   }
 }

@@ -3,11 +3,14 @@
   grid-template-areas:
     "navigation projects context"
     "navigation access context";
-  grid-template-columns: minmax(210px, 0.72fr) minmax(650px, 2.1fr) minmax(360px, 1fr);
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 20px;
+  grid-template-columns:
+    clamp(220px, 18vw, 260px)
+    minmax(0, 1fr)
+    clamp(320px, 25vw, 380px);
+  grid-template-rows: minmax(174px, 30vh, 252px) minmax(0, 1fr);
+  gap: 16px;
   align-items: stretch;
-  height: calc(100vh - 32px);
+  height: calc(100vh - 20px);
   min-height: 0;
 }
 
@@ -24,23 +27,28 @@
 
 .cockpit-layout-projects {
   grid-area: projects;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .cockpit-layout-access {
   grid-area: access;
   min-height: 0;
+  overflow: hidden;
 }
 
 .cockpit-layout-context {
   grid-area: context;
+  overflow: hidden;
 }
 
 @media (max-width: 1510px) {
   .cockpit-layout {
-    grid-template-columns: minmax(180px, 0.72fr) minmax(520px, 2.1fr) minmax(260px, 1fr);
-    grid-template-rows: auto minmax(0, 1fr);
-    gap: 14px;
+    grid-template-columns:
+      clamp(186px, 17vw, 228px)
+      minmax(0, 1fr)
+      clamp(270px, 24vw, 330px);
+    grid-template-rows: minmax(144px, 28vh, 214px) minmax(0, 1fr);
+    gap: 12px;
   }
 }
 
@@ -51,6 +59,9 @@
       "navigation access"
       "context context";
     grid-template-columns: minmax(220px, 0.7fr) minmax(0, 2fr);
+    grid-template-rows: minmax(150px, auto) minmax(360px, auto) minmax(280px, auto);
+    height: auto;
+    min-height: calc(100vh - 20px);
   }
 }
 
@@ -62,7 +73,9 @@
       "access"
       "context";
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
     gap: 18px;
+    height: auto;
     min-height: 0;
   }
 }

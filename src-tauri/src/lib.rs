@@ -112,6 +112,42 @@ fn canonical_project_path(path: &str) -> Result<std::path::PathBuf, &'static str
     Ok(requested_path)
 }
 
+fn matching_branch_dir(
+    branch_id: &str,
+    fallback_label: &str,
+    directory_names: &[String],
+) -> Option<String> {
+    let numbered_match = directory_names
+        .iter()
+        .map(String::as_str)
+        .find(|directory_name| {
+            let normalized_name = directory_name.to_lowercase();
+
+            match branch_id {
+                "assets" => {
+                    normalized_name.starts_with("01_") && normalized_name.contains("asset")
+                }
+                "docs" => normalized_name.starts_with("02_") && normalized_name.contains("docs"),
+                "features" => {
+                    normalized_name.starts_with("05_") && normalized_name.contains("features")
+                }
+                "archives" => {
+                    normalized_name.starts_with("99_") && normalized_name.contains("archive")
+                }
+                _ => false,
+            }
+        })
+        .map(str::to_owned);
+
+    numbered_match.or_else(|| {
+        directory_names
+            .iter()
+            .map(String::as_str)
+            .find(|directory_name| directory_name.eq_ignore_ascii_case(fallback_label))
+            .map(str::to_owned)
+    })
+}
+
 #[tauri::command]
 fn list_project_genealogy(project_path: &str) -> Result<Vec<ProjectBranch>, &'static str> {
     let project_path = canonical_project_path(project_path)?;
@@ -121,17 +157,31 @@ fn list_project_genealogy(project_path: &str) -> Result<Vec<ProjectBranch>, &'st
         ("features", "Features"),
         ("archives", "Archives"),
     ];
+    let directory_names = std::fs::read_dir(&project_path)
+        .map_err(|_| "read_failed")?
+        .filter_map(Result::ok)
+        .filter_map(|entry| {
+            let is_directory = entry.file_type().ok()?.is_dir();
+
+            is_directory.then(|| entry.file_name().to_string_lossy().into_owned())
+        })
+        .collect::<Vec<_>>();
 
     Ok(branch_specs
         .iter()
         .map(|(id, label)| {
-            let branch_path = project_path.join(label);
-            let exists = branch_path.is_dir();
+            let branch_path = matching_branch_dir(
+                id,
+                label,
+                &directory_names,
+            )
+            .map(|directory_name| project_path.join(directory_name));
+            let exists = branch_path.is_some();
 
             ProjectBranch {
                 id: (*id).into(),
                 label: (*label).into(),
-                path: exists.then(|| branch_path.to_string_lossy().into_owned()),
+                path: branch_path.map(|path| path.to_string_lossy().into_owned()),
                 exists,
             }
         })
@@ -252,4 +302,71 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::matching_branch_dir;
+
+    fn names(values: &[&str]) -> Vec<String> {
+        values.iter().map(|value| (*value).into()).collect()
+    }
+
+    #[test]
+    fn matches_numbered_project_branch_directories() {
+        let directories = names(&[
+            "01_🌙Lun△rMood_Assets",
+            "02_🌙Lun△rMood_Docs",
+            "05_🌙Lun△rMood_FEATURES",
+            "99_🌙Lun△rMood_Archive",
+        ]);
+
+        assert_eq!(
+            matching_branch_dir("assets", "Assets", &directories),
+            Some("01_🌙Lun△rMood_Assets".into())
+        );
+        assert_eq!(
+            matching_branch_dir("docs", "Docs", &directories),
+            Some("02_🌙Lun△rMood_Docs".into())
+        );
+        assert_eq!(
+            matching_branch_dir("features", "Features", &directories),
+            Some("05_🌙Lun△rMood_FEATURES".into())
+        );
+        assert_eq!(
+            matching_branch_dir("archives", "Archives", &directories),
+            Some("99_🌙Lun△rMood_Archive".into())
+        );
+    }
+
+    #[test]
+    fn matches_singular_asset_directory() {
+        let directories = names(&["01_⭐Astr4lForge_Asset"]);
+
+        assert_eq!(
+            matching_branch_dir("assets", "Assets", &directories),
+            Some("01_⭐Astr4lForge_Asset".into())
+        );
+    }
+
+    #[test]
+    fn falls_back_to_legacy_exact_directory_names() {
+        let directories = names(&["Assets", "Docs", "Features", "Archives"]);
+
+        assert_eq!(
+            matching_branch_dir("docs", "Docs", &directories),
+            Some("Docs".into())
+        );
+        assert_eq!(
+            matching_branch_dir("archives", "Archives", &directories),
+            Some("Archives".into())
+        );
+    }
+
+    #[test]
+    fn returns_none_for_missing_branch_directory() {
+        let directories = names(&["01_Project_Assets"]);
+
+        assert_eq!(matching_branch_dir("features", "Features", &directories), None);
+    }
 }

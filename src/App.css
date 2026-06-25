@@ -24,6 +24,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
+  overflow: hidden;
   background: var(--bg-app);
 }
 
@@ -33,9 +34,10 @@ button {
 
 .vesper-app {
   width: min(100%, 1920px);
-  min-height: 100vh;
+  height: 100vh;
   margin: 0 auto;
-  padding: 0 10px 36px 22px;
+  padding: 10px;
+  overflow: hidden;
 }
 
 .vesper-header {
@@ -116,7 +118,8 @@ button {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  min-width: 0;
 }
 
 .project-heading-actions > span {
@@ -134,13 +137,11 @@ button {
   position: relative;
 }
 
-.companion-settings-trigger {
+.companion-settings-trigger,
+.project-manager-trigger {
   min-height: 31px;
   padding: 0 12px;
-  border: 1px solid rgba(250, 204, 21, 0.52);
   border-radius: 8px;
-  color: #facc15;
-  background: rgba(250, 204, 21, 0.07);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -148,29 +149,69 @@ button {
   cursor: pointer;
 }
 
+.companion-settings-trigger {
+  border: 1px solid rgba(250, 204, 21, 0.52);
+  color: #facc15;
+  background: rgba(250, 204, 21, 0.07);
+}
+
+.project-manager {
+  position: relative;
+}
+
+.project-manager-trigger {
+  border: 1px solid rgba(80, 210, 255, 0.45);
+  color: var(--accent-blue);
+  background: rgba(80, 210, 255, 0.07);
+}
+
+.companion-settings-trigger:hover,
+.companion-settings-trigger:focus-visible,
+.project-manager-trigger:hover,
+.project-manager-trigger:focus-visible {
+  outline: none;
+}
+
 .companion-settings-trigger:hover,
 .companion-settings-trigger:focus-visible {
   border-color: rgba(250, 204, 21, 0.82);
   background: rgba(250, 204, 21, 0.12);
-  outline: none;
 }
 
-.companion-settings-panel {
+.project-manager-trigger:hover,
+.project-manager-trigger:focus-visible {
+  border-color: rgba(80, 210, 255, 0.72);
+  background: rgba(80, 210, 255, 0.12);
+}
+
+.companion-settings-panel,
+.project-manager-panel {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
   z-index: 12;
   display: grid;
-  width: 190px;
   gap: 8px;
   padding: 10px;
-  border: 1px solid rgba(250, 204, 21, 0.42);
   border-radius: 8px;
   background: rgba(5, 14, 30, 0.98);
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.38);
 }
 
-.companion-settings-panel label {
+.companion-settings-panel {
+  width: 190px;
+  border: 1px solid rgba(250, 204, 21, 0.42);
+}
+
+.project-manager-panel {
+  width: min(340px, 70vw);
+  max-height: min(360px, 60vh);
+  overflow: auto;
+  border: 1px solid rgba(80, 210, 255, 0.42);
+}
+
+.companion-settings-panel label,
+.project-manager-panel label {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -180,6 +221,18 @@ button {
   font-size: 12px;
 }
 
+.project-manager-panel label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 118px;
+}
+
+.project-manager-panel label > span {
+  overflow: hidden;
+  color: var(--text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .companion-settings-panel input {
   width: 34px;
   height: 18px;
@@ -187,9 +240,25 @@ button {
   cursor: pointer;
 }
 
+.project-manager-panel select {
+  width: 100%;
+  min-height: 28px;
+  border: 1px solid rgba(80, 210, 255, 0.26);
+  border-radius: 7px;
+  color: var(--text-primary);
+  background: #071225;
+  font: inherit;
+}
+
+.project-manager-panel p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
 .project-list {
   display: grid;
-  gap: 19px;
+  gap: 8px;
 }
 
 .project-list .project-card {
@@ -216,11 +285,6 @@ button {
   background: rgba(80, 210, 255, 0.04);
 }
 
-.vesper-app {
-  max-width: 1920px;
-  padding: 16px;
-}
-
 .cockpit-layout-navigation,
 .cockpit-layout-projects {
   border: 1px solid var(--border-soft);
@@ -232,11 +296,11 @@ button {
   display: flex;
   flex-direction: column;
   min-height: 100%;
-  padding: 22px 18px;
+  padding: 18px 16px;
 }
 
 .cockpit-brand {
-  padding: 4px 8px 24px;
+  padding: 2px 6px 18px;
   border-bottom: 1px solid var(--border-soft);
 }
 
@@ -253,9 +317,9 @@ button {
 }
 
 .cockpit-brand h1 {
-  margin: 8px 0 4px;
+  margin: 6px 0 4px;
   color: var(--text-primary);
-  font-size: 30px;
+  font-size: 28px;
   letter-spacing: 0.08em;
 }
 
@@ -266,7 +330,7 @@ button {
 
 .global-navigation,
 .project-status-legend {
-  padding: 24px 8px 0;
+  padding: 18px 6px 0;
 }
 
 .global-navigation ul,
@@ -283,7 +347,7 @@ button {
   align-items: center;
   gap: 12px;
   width: 100%;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border: 1px solid transparent;
   border-radius: 10px;
   color: var(--text-secondary);
@@ -339,7 +403,7 @@ button {
   grid-template-columns: 8px 1fr auto;
   gap: 10px;
   align-items: center;
-  padding: 8px 10px;
+  padding: 7px 8px;
   color: var(--text-secondary);
   font-size: 13px;
 }
@@ -364,7 +428,7 @@ button {
   display: flex;
   gap: 8px;
   margin-top: auto;
-  padding: 22px 8px 0;
+  padding: 16px 6px 0;
   border-top: 1px solid var(--border-soft);
 }
 
@@ -378,33 +442,38 @@ button {
 }
 
 .cockpit-layout-projects {
-  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 12px;
 }
 
 .cockpit-section-heading {
   min-height: 0;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
 }
 
 .cockpit-section-heading h2 {
   margin-top: 2px;
-  font-size: 15px;
+  font-size: 16px;
   letter-spacing: -0.02em;
   text-transform: none;
 }
 
 .project-list {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  align-content: start;
+  min-height: 0;
+  overflow: auto;
 }
 
 @media (max-width: 1510px) {
   .vesper-app {
-    padding: 10px;
+    padding: 7px;
   }
 
   .cockpit-navigation-content {
-    padding: 15px 12px;
+    padding: 14px 11px;
   }
 
   .cockpit-brand {
@@ -432,7 +501,7 @@ button {
   }
 
   .cockpit-layout-projects {
-    padding: 7px 9px;
+    padding: 9px;
   }
 
   .cockpit-section-heading {
@@ -440,11 +509,12 @@ button {
   }
 
   .cockpit-section-heading h2 {
-    font-size: 13px;
+    font-size: 14px;
   }
 
   .project-list {
-    gap: 6px;
+    grid-template-columns: repeat(auto-fit, minmax(146px, 1fr));
+    gap: 7px;
   }
 }
 
@@ -456,7 +526,7 @@ button {
 
 @media (max-width: 1510px) {
   .vesper-app {
-    padding: 0 7px 24px 15px;
+    padding: 7px;
   }
 
   .vesper-header {
@@ -476,8 +546,8 @@ button {
   }
 
   .cockpit-section-heading {
-    min-height: 20px;
-    margin-bottom: 6px;
+    min-height: 22px;
+    margin-bottom: 7px;
   }
 
   .cockpit-section-heading h2 {
@@ -496,19 +566,30 @@ button {
     font-size: 11px;
   }
 
-  .companion-settings-trigger {
-    min-height: 20px;
-    padding-inline: 7px;
+  .companion-settings-trigger,
+  .project-manager-trigger {
+    min-height: 22px;
+    padding-inline: 8px;
     font-size: 8px;
   }
 
+  .project-manager-panel {
+    width: min(300px, 78vw);
+  }
+
   .project-list {
-    gap: 6px;
+    gap: 7px;
   }
 }
 
 @media (max-width: 760px) {
+  body {
+    overflow: auto;
+  }
+
   .vesper-app {
+    height: auto;
+    overflow: visible;
     padding-inline: 14px;
   }
 

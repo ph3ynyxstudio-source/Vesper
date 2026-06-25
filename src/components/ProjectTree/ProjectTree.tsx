@@ -117,13 +117,19 @@ function BranchIcon({ id }: { id: ProjectBranchId }) {
     return (
       <svg viewBox="0 0 64 64" role="img" aria-label="">
         <defs>
-          <linearGradient id="featuresGradient" x1="10" y1="32" x2="56" y2="32">
+          <linearGradient id="featuresGradient" x1="22" y1="16" x2="44" y2="48">
             <stop stopColor="#e057ff" />
             <stop offset="1" stopColor="#ff1ee8" />
           </linearGradient>
         </defs>
-        <path d="M10 32h40" stroke="url(#featuresGradient)" strokeWidth="5" strokeLinecap="round" />
-        <path d="m37 18 15 14-15 14" fill="none" stroke="#ff63f1" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+        <path
+          d="m25 17 15 15-15 15"
+          fill="none"
+          stroke="url(#featuresGradient)"
+          strokeWidth="6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
     );
   }
@@ -224,15 +230,15 @@ export function ProjectTree({
                 type="button"
                 key={id}
                 disabled={!branch.exists || !branch.path}
+                aria-label={
+                  branch.exists && branch.path
+                    ? `Ouvrir ${meta.title}`
+                    : `${meta.title} indisponible`
+                }
                 onClick={() => onOpenBranch?.(branch)}
               >
                 <span className="project-tree-node-icon">
                   <BranchIcon id={id} />
-                </span>
-                <strong>{meta.title}</strong>
-                <small>{branch.exists ? meta.subtitle : "Dossier absent"}</small>
-                <span className="project-tree-node-action">
-                  {branch.exists ? "Ouvrir" : "Indisponible"}
                 </span>
               </button>
             );

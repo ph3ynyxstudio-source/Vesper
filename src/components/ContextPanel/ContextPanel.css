@@ -86,7 +86,7 @@
   color: #7dd3fc;
 }
 
-.context-panel-status.pause,
+.context-panel-status.paused,
 .context-panel-status.concept {
   color: #c084fc;
 }

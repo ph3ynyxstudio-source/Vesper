@@ -8,12 +8,44 @@ struct ProjectDirectory {
     name: String,
     path: String,
     modified_at_epoch_seconds: Option<u64>,
+    status: String,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct ProjectBranch {
+    id: String,
+    label: String,
+    path: Option<String>,
+    exists: bool,
 }
 
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 struct CompanionSettings {
     visible: bool,
     shadow: bool,
+}
+
+fn is_valid_project_status(status: &str) -> bool {
+    matches!(status, "active" | "paused" | "concept" | "archived")
+}
+
+fn read_project_status(project_path: &std::path::Path) -> String {
+    let metadata_path = project_path.join("vesper.json");
+    let Ok(metadata) = std::fs::read_to_string(metadata_path) else {
+        return "active".into();
+    };
+    let Ok(value) = serde_json::from_str::<serde_json::Value>(&metadata) else {
+        return "active".into();
+    };
+    let Some(status) = value.get("status").and_then(serde_json::Value::as_str) else {
+        return "active".into();
+    };
+
+    match status {
+        "pause" => "paused".into(),
+        valid_status if is_valid_project_status(valid_status) => valid_status.into(),
+        _ => "active".into(),
+    }
 }
 
 #[tauri::command]
@@ -40,10 +72,13 @@ fn list_project_directories() -> Result<Vec<ProjectDirectory>, String> {
                     .map(|duration| duration.as_secs())
             });
 
+        let path = entry.path();
+
         projects.push(ProjectDirectory {
             name: entry.file_name().to_string_lossy().into_owned(),
-            path: entry.path().to_string_lossy().into_owned(),
+            path: path.to_string_lossy().into_owned(),
             modified_at_epoch_seconds,
+            status: read_project_status(&path),
         });
     }
 
@@ -53,6 +88,14 @@ fn list_project_directories() -> Result<Vec<ProjectDirectory>, String> {
 
 #[tauri::command]
 fn open_project_directory(app: tauri::AppHandle, path: &str) -> Result<(), &'static str> {
+    let requested_path = canonical_project_path(path)?;
+
+    app.opener()
+        .open_path(requested_path.to_string_lossy().as_ref(), None::<&str>)
+        .map_err(|_| "open_failed")
+}
+
+fn canonical_project_path(path: &str) -> Result<std::path::PathBuf, &'static str> {
     let requested_path = std::path::Path::new(path);
     let root = std::path::Path::new(PROJECTS_ROOT);
     let requested_path = requested_path.canonicalize().map_err(|_| "invalid_path")?;
@@ -66,9 +109,55 @@ fn open_project_directory(app: tauri::AppHandle, path: &str) -> Result<(), &'sta
         return Err("not_a_directory");
     }
 
-    app.opener()
-        .open_path(requested_path.to_string_lossy().as_ref(), None::<&str>)
-        .map_err(|_| "open_failed")
+    Ok(requested_path)
+}
+
+#[tauri::command]
+fn list_project_genealogy(project_path: &str) -> Result<Vec<ProjectBranch>, &'static str> {
+    let project_path = canonical_project_path(project_path)?;
+    let branch_specs = [
+        ("docs", "Docs"),
+        ("assets", "Assets"),
+        ("features", "Features"),
+        ("archives", "Archives"),
+    ];
+
+    Ok(branch_specs
+        .iter()
+        .map(|(id, label)| {
+            let branch_path = project_path.join(label);
+            let exists = branch_path.is_dir();
+
+            ProjectBranch {
+                id: (*id).into(),
+                label: (*label).into(),
+                path: exists.then(|| branch_path.to_string_lossy().into_owned()),
+                exists,
+            }
+        })
+        .collect())
+}
+
+#[tauri::command]
+fn update_project_status(project_path: &str, status: &str) -> Result<(), &'static str> {
+    if !is_valid_project_status(status) {
+        return Err("invalid_status");
+    }
+
+    let project_path = canonical_project_path(project_path)?;
+    let metadata_path = project_path.join("vesper.json");
+    let mut metadata = std::fs::read_to_string(&metadata_path)
+        .ok()
+        .and_then(|value| serde_json::from_str::<serde_json::Value>(&value).ok())
+        .and_then(|value| value.as_object().cloned())
+        .unwrap_or_default();
+
+    metadata.insert("status".into(), serde_json::Value::String(status.into()));
+
+    let metadata = serde_json::to_string_pretty(&serde_json::Value::Object(metadata))
+        .map_err(|_| "serialize_failed")?;
+
+    std::fs::write(metadata_path, metadata).map_err(|_| "write_failed")
 }
 
 #[tauri::command]
@@ -156,6 +245,8 @@ pub fn run() {
             greet,
             drag_vesperion,
             list_project_directories,
+            list_project_genealogy,
+            update_project_status,
             open_project_directory,
             apply_companion_settings
         ])

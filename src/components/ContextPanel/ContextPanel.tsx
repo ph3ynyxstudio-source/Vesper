@@ -17,7 +17,7 @@ type ContextPanelProps = {
 
 const statusLabels: Record<ProjectStatus, string> = {
   active: "Actif",
-  pause: "En pause",
+  paused: "En pause",
   concept: "Concept",
   archived: "Archivé",
 };

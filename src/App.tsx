@@ -9,7 +9,7 @@ import {
 } from "./components/ProjectCard/ProjectCard";
 import {
   ProjectTree,
-  type ProjectQuickAccess,
+  type ProjectGenealogyBranch,
 } from "./components/ProjectTree/ProjectTree";
 import "./App.css";
 
@@ -24,6 +24,14 @@ type ProjectDirectory = {
   name: string;
   path: string;
   modified_at_epoch_seconds?: number;
+  status: ProjectStatus;
+};
+
+type ProjectBranchResponse = {
+  id: ProjectGenealogyBranch["id"];
+  label: string;
+  path?: string;
+  exists: boolean;
 };
 
 type LocalProject = {
@@ -36,7 +44,6 @@ type LocalProject = {
   locationLabel: string;
   summary: string;
   sessionEnd: string;
-  accesses: ProjectQuickAccess[];
 };
 
 const projectsRoot = "C:\\Ph3yNyx.OS\\05_⭐VESPΣR";
@@ -93,20 +100,11 @@ function toLocalProject(directory: ProjectDirectory): LocalProject {
     icon: getProjectIcon(directory.name),
     type: "Dossier local",
     description: "Projet reflété depuis le dossier VESPΣR.",
-    status: "active",
+    status: directory.status,
     lastSession,
     locationLabel: directory.path,
     summary: `Dossier projet présent dans ${projectsRoot}.`,
     sessionEnd: `Dernier état local observé : ${lastSession}.`,
-    accesses: [
-      {
-        id: "root",
-        label: "Dossier racine",
-        description: directory.path,
-        icon: "□",
-        destinationPath: directory.path,
-      },
-    ],
   };
 }
 
@@ -118,6 +116,9 @@ function App() {
   const [companionSettings, setCompanionSettings] = useState(
     readCompanionSettings,
   );
+  const [projectBranches, setProjectBranches] = useState<ProjectGenealogyBranch[]>([]);
+  const [projectTreeState, setProjectTreeState] =
+    useState<"loading" | "ready" | "error">("loading");
   const [isCompanionPanelOpen, setIsCompanionPanelOpen] = useState(false);
   const [contextCopyState, setContextCopyState] = useState<CopyState>("idle");
   const [sessionCopyState, setSessionCopyState] = useState<CopyState>("idle");
@@ -176,6 +177,44 @@ function App() {
       console.error("Unable to apply VESPΣRION settings", error);
     });
   }, [companionSettings]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadProjectBranches() {
+      if (!activeProject) {
+        setProjectBranches([]);
+        setProjectTreeState("ready");
+        return;
+      }
+
+      setProjectTreeState("loading");
+
+      try {
+        const branches = await invoke<ProjectBranchResponse[]>(
+          "list_project_genealogy",
+          {
+            projectPath: activeProject.locationLabel,
+          },
+        );
+
+        if (!isMounted) return;
+        setProjectBranches(branches);
+        setProjectTreeState("ready");
+      } catch (error: unknown) {
+        console.error("Unable to read project genealogy", error);
+        if (!isMounted) return;
+        setProjectBranches([]);
+        setProjectTreeState("error");
+      }
+    }
+
+    loadProjectBranches();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeProject]);
 
   function fallbackCopyText(value: string) {
     const textarea = document.createElement("textarea");
@@ -242,6 +281,26 @@ function App() {
     }));
   }
 
+  async function updateProjectStatus(projectName: string, status: ProjectStatus) {
+    const project = projects.find((value) => value.name === projectName);
+    if (!project) return;
+
+    setProjects((currentProjects) =>
+      currentProjects.map((project) =>
+        project.name === projectName ? { ...project, status } : project,
+      ),
+    );
+
+    try {
+      await invoke("update_project_status", {
+        projectPath: project.locationLabel,
+        status,
+      });
+    } catch (error: unknown) {
+      console.error("Unable to update project status", error);
+    }
+  }
+
   async function notifyVesperion(
     status: "success" | "error",
     accessLabel: string,
@@ -253,16 +312,16 @@ function App() {
     }
   }
 
-  async function openProjectAccess(access: ProjectQuickAccess) {
-    if (!access.destinationPath) return;
+  async function openProjectBranch(branch: ProjectGenealogyBranch) {
+    if (!branch.path) return;
 
     try {
       await invoke("open_project_directory", {
-        path: access.destinationPath,
+        path: branch.path,
       });
-      await notifyVesperion("success", access.label);
+      await notifyVesperion("success", branch.label);
     } catch {
-      await notifyVesperion("error", access.label);
+      await notifyVesperion("error", branch.label);
     }
   }
 
@@ -270,7 +329,7 @@ function App() {
     (project) => project.status === "active",
   ).length;
   const pauseProjectCount = projects.filter(
-    (project) => project.status === "pause",
+    (project) => project.status === "paused",
   ).length;
   const conceptProjectCount = projects.filter(
     (project) => project.status === "concept",
@@ -309,7 +368,7 @@ function App() {
               <h2 id="project-status-title">Projets</h2>
               <ul>
                 <li><span className="active" />Actifs<strong>{activeProjectCount}</strong></li>
-                <li><span className="pause" />En pause<strong>{pauseProjectCount}</strong></li>
+                <li><span className="paused" />En pause<strong>{pauseProjectCount}</strong></li>
                 <li><span className="concept" />Concepts / futurs<strong>{conceptProjectCount}</strong></li>
                 <li><span className="archived" />Archivés<strong>{archivedProjectCount}</strong></li>
               </ul>
@@ -398,12 +457,12 @@ function App() {
                   key={project.name}
                   name={project.name}
                   icon={project.icon}
-                  type={project.type}
-                  description={project.description}
                   status={project.status}
-                  lastSession={project.lastSession}
                   isActive={project.name === activeProject?.name}
                   onClick={() => selectProject(project.name)}
+                  onStatusChange={(status) =>
+                    updateProjectStatus(project.name, status)
+                  }
                 />
               ))}
             </div>
@@ -413,10 +472,17 @@ function App() {
           activeProject ? (
             <ProjectTree
               projectName={activeProject.name}
-              accesses={activeProject.accesses}
-              onAccess={openProjectAccess}
+              projectPath={activeProject.locationLabel}
+              branches={projectBranches}
+              onOpenBranch={openProjectBranch}
             />
-          ) : null
+          ) : (
+            <div className="project-tree-placeholder">
+              {projectTreeState === "error"
+                ? "Impossible de lire l'arbre du projet."
+                : "Sélectionne un projet pour voir son arbre."}
+            </div>
+          )
         }
         contextPanel={
           activeProject ? (

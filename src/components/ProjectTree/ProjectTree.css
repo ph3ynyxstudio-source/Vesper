@@ -1,365 +1,379 @@
 .project-tree {
+  position: relative;
   min-height: 100%;
-  padding: 32px 36px 36px;
-  border: 1px solid rgba(63, 169, 216, 0.28);
-  border-radius: 30px;
+  padding: 10px 16px 12px;
+  overflow: hidden;
+  border: 1px solid rgba(224, 87, 255, 0.34);
+  border-radius: 22px;
   background:
-    radial-gradient(circle at 50% 0%, rgba(80, 210, 255, 0.05), transparent 40%),
-    linear-gradient(180deg, rgba(8, 21, 40, 0.98), rgba(5, 14, 30, 0.98));
-  box-shadow: none;
+    radial-gradient(circle at 50% 20%, rgba(224, 87, 255, 0.12), transparent 34%),
+    radial-gradient(circle at 16% 68%, rgba(80, 210, 255, 0.11), transparent 32%),
+    linear-gradient(180deg, rgba(5, 13, 29, 0.98), rgba(3, 8, 20, 0.98));
 }
 
-.project-tree-heading,
-.project-tree-folder,
-.project-tree-root {
-  display: flex;
-  align-items: center;
+.project-tree::before {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(80, 210, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(80, 210, 255, 0.035) 1px, transparent 1px);
+  background-size: 42px 42px;
+  content: "";
+  mask-image: radial-gradient(circle at 50% 50%, black, transparent 78%);
+  pointer-events: none;
 }
 
 .project-tree-heading {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: start;
   justify-content: space-between;
-  color: var(--text-muted);
-  font-size: 19px;
-  letter-spacing: 0.07em;
+  gap: 20px;
+}
+
+.project-tree-heading span {
+  color: #e57cff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.project-tree-heading strong {
-  padding: 6px 13px;
-  border: 1px solid rgba(168, 85, 247, 0.22);
-  border-radius: 999px;
-  color: #e057ff;
-  background: rgba(168, 85, 247, 0.08);
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.project-tree-root {
-  gap: 18px;
-  min-height: 101px;
-  margin: 36px 0 27px;
-  padding: 23px;
-  border: 1px solid rgba(80, 210, 255, 0.4);
-  border-radius: 19px;
-  background: rgba(80, 210, 255, 0.08);
-}
-
-.project-tree-root-icon {
-  display: grid;
-  place-items: center;
-  width: 52px;
-  height: 52px;
-  border-radius: 15px;
-  color: var(--accent-blue);
-  background: rgba(84, 214, 255, 0.12);
-  font-size: 28px;
-}
-
-.project-tree-root h2 {
-  margin: 0;
+.project-tree-heading h2 {
+  margin: 2px 0;
   color: var(--text-primary);
-  font-size: 30px;
-  transform: translateY(-2px);
+  font-size: 18px;
+  letter-spacing: 0;
 }
 
-.project-tree-sections,
-.project-tree-items {
+.project-tree-heading p {
+  max-width: 620px;
   margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.project-tree-sections {
-  display: grid;
-  gap: 17px;
-  margin-left: 24px;
-  border-left: 1px solid rgba(84, 214, 255, 0.15);
-}
-
-.project-tree-section {
-  position: relative;
-  padding-left: 38px;
-}
-
-.project-tree-section::before {
-  position: absolute;
-  top: 26px;
-  left: 0;
-  width: 22px;
-  border-top: 1px solid rgba(84, 214, 255, 0.15);
-  content: "";
-}
-
-.project-tree-folder {
-  gap: 15px;
-  min-height: 52px;
-  color: var(--text-primary);
-  font-size: 21px;
-}
-
-.project-tree-folder > span {
-  color: var(--accent-blue);
-}
-
-.project-tree-folder small {
-  margin-left: auto;
-  color: #7080a2;
-  font-size: 16px;
-}
-
-.project-tree-items {
-  display: grid;
-  gap: 3px;
-  padding: 0 0 9px 33px;
-  color: var(--text-secondary);
-  font-size: 20px;
-}
-
-.project-tree-items li::before {
-  margin-right: 13px;
-  color: rgba(168, 85, 247, 0.7);
-  content: "·";
-}
-
-@media (max-width: 1510px) {
-  .project-tree {
-    padding: 24px;
-    border-radius: 20px;
-  }
-
-  .project-tree-heading {
-    font-size: 12px;
-  }
-
-  .project-tree-heading strong {
-    padding: 4px 8px;
-    font-size: 10px;
-  }
-
-  .project-tree-root {
-    gap: 12px;
-    min-height: 0;
-    margin: 24px 0 18px;
-    padding: 16px;
-    border-radius: 14px;
-  }
-
-  .project-tree-root-icon {
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-    font-size: 20px;
-  }
-
-  .project-tree-root h2 {
-    font-size: 20px;
-  }
-
-  .project-tree-sections {
-    gap: 8px;
-    margin-left: 16px;
-  }
-
-  .project-tree-section {
-    padding-left: 22px;
-  }
-
-  .project-tree-section::before {
-    top: 18px;
-    width: 14px;
-  }
-
-  .project-tree-folder {
-    gap: 9px;
-    min-height: 36px;
-    font-size: 14px;
-  }
-
-  .project-tree-folder small {
-    font-size: 11px;
-  }
-
-  .project-tree-items {
-    gap: 5px;
-    padding: 2px 0 8px 25px;
-    font-size: 13px;
-  }
-
-  .project-tree-items li::before {
-    margin-right: 8px;
-  }
-}
-
-@media (max-width: 760px) {
-  .project-tree {
-    padding: 22px;
-    border-radius: 24px;
-  }
-
-  .project-tree-root {
-    margin-top: 24px;
-  }
-
-  .project-tree-sections {
-    margin-left: 10px;
-  }
-}
-
-.project-tree {
-  min-height: 100%;
-  padding: 20px;
-  border-radius: 22px;
-}
-
-.project-tree-heading {
+  overflow: hidden;
+  color: #16f5ff;
   font-size: 11px;
-}
-
-.project-tree-heading strong {
-  max-width: 55%;
-  overflow: hidden;
-  padding: 4px 8px;
-  font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.project-tree h2 {
-  margin: 16px 0 3px;
-  color: var(--text-primary);
-  font-size: 22px;
+.project-tree-heading > strong {
+  padding: 4px 10px;
+  border: 1px solid rgba(80, 210, 255, 0.45);
+  border-radius: 999px;
+  color: #16f5ff;
+  background: rgba(80, 210, 255, 0.07);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.project-tree-intro {
-  margin: 0 0 17px;
-  color: var(--text-secondary);
-  font-size: 13px;
-}
-
-.project-tree-actions {
+.project-genealogy-map {
+  position: relative;
+  z-index: 1;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  grid-template-rows: auto auto auto;
+  min-height: 0;
+  margin-top: 2px;
 }
 
-.project-tree-actions button {
+.project-genealogy-lines {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 92%;
+  height: 34px;
+  margin: -1px auto -7px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.tree-line-main,
+.tree-line-branch {
+  fill: none;
+  stroke: url(#treeLineGradient);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: url(#treeLineGlow);
+}
+
+.tree-line-main {
+  stroke-width: 5;
+}
+
+.tree-line-branch {
+  stroke-width: 4;
+}
+
+.project-tree-root-node {
+  position: relative;
+  z-index: 2;
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr) auto;
-  gap: 11px;
-  align-items: center;
-  width: 100%;
-  min-height: 68px;
-  padding: 10px 12px;
-  border: 1px solid rgba(80, 210, 255, 0.16);
-  border-radius: 13px;
-  color: var(--text-primary);
-  background: rgba(3, 9, 22, 0.55);
-  text-align: left;
-  cursor: pointer;
+  justify-self: center;
+  place-items: center;
+  width: 150px;
+  padding-top: 0;
+  text-align: center;
 }
 
-.project-tree-actions button:hover,
-.project-tree-actions button:focus-visible {
-  border-color: rgba(80, 210, 255, 0.55);
-  background: rgba(80, 210, 255, 0.08);
-  outline: none;
-}
-
-.project-tree-actions button:disabled {
-  border-color: rgba(110, 127, 159, 0.12);
-  color: var(--text-muted);
-  background: rgba(3, 9, 22, 0.3);
-  cursor: not-allowed;
-  opacity: 0.62;
-}
-
-.project-tree-actions button:disabled:hover {
-  border-color: rgba(110, 127, 159, 0.12);
-  background: rgba(3, 9, 22, 0.3);
-}
-
-.project-tree-action-icon {
+.project-tree-root-orb {
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 9px;
-  color: var(--accent-blue);
-  background: rgba(80, 210, 255, 0.1);
-  font-family: "Cascadia Code", Consolas, monospace;
+  width: 38px;
+  height: 38px;
+  border: 2px solid rgba(224, 87, 255, 0.72);
+  border-radius: 12px;
+  background: rgba(124, 77, 255, 0.12);
+  box-shadow:
+    0 0 28px rgba(224, 87, 255, 0.28),
+    inset 0 0 22px rgba(80, 210, 255, 0.08);
+  transform: rotate(30deg);
 }
 
-.project-tree-actions strong,
-.project-tree-actions small {
-  display: block;
+.project-tree-root-orb svg {
+  width: 27px;
+  height: 27px;
+  transform: rotate(-30deg);
 }
 
-.project-tree-actions strong {
-  font-size: 13px;
-}
-
-.project-tree-actions small {
+.project-tree-root-node strong {
+  width: 100%;
   margin-top: 3px;
+  padding: 3px 8px;
   overflow: hidden;
-  color: var(--text-muted);
-  font-size: 10px;
+  border: 1px solid rgba(224, 87, 255, 0.7);
+  border-radius: 8px;
+  color: var(--text-primary);
+  background: rgba(9, 8, 26, 0.82);
+  font-size: 12px;
   text-overflow: ellipsis;
+  text-transform: uppercase;
   white-space: nowrap;
+  box-shadow: 0 0 20px rgba(224, 87, 255, 0.18);
 }
 
-.project-tree-action-arrow {
-  color: var(--text-muted);
+.project-tree-root-node small {
+  margin-top: 2px;
+  color: #ff4df3;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.project-tree-branches {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  align-items: start;
+  margin-top: 0;
+}
+
+.project-tree-node {
+  display: grid;
+  justify-items: center;
+  min-height: 82px;
+  padding: 5px 6px 6px;
+  border: 1px solid currentColor;
+  border-radius: 18px;
+  color: #50d2ff;
+  background:
+    radial-gradient(circle at 50% 12%, color-mix(in srgb, currentColor 18%, transparent), transparent 55%),
+    rgba(3, 9, 22, 0.72);
+  text-align: center;
+  cursor: pointer;
+  clip-path: polygon(50% 0, 92% 20%, 92% 74%, 50% 100%, 8% 74%, 8% 20%);
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease,
+    filter 0.18s ease;
+}
+
+.project-tree-node:hover,
+.project-tree-node:focus-visible {
+  filter: drop-shadow(0 0 16px currentColor);
+  outline: none;
+  transform: translateY(-3px);
+}
+
+.project-tree-node:disabled {
+  cursor: not-allowed;
+  filter: none;
+  opacity: 0.62;
+  transform: none;
+}
+
+.project-tree-node-icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-top: 4px;
+  filter: drop-shadow(0 0 12px currentColor);
+}
+
+.project-tree-node-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.project-tree-node strong {
+  margin-top: 4px;
+  color: currentColor;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.project-tree-node small {
+  max-width: 118px;
+  margin-top: 2px;
+  color: var(--text-secondary);
+  font-size: 8px;
+  line-height: 1.2;
+}
+
+.project-tree-node-action {
+  align-self: end;
+  margin-top: 4px;
+  padding: 2px 7px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  color: currentColor;
+  background: rgba(3, 9, 22, 0.72);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tone-cyan {
+  color: #50d2ff;
+}
+
+.tone-turquoise {
+  color: #18f5d2;
+}
+
+.tone-magenta {
+  color: #ff1ee8;
+}
+
+.tone-gold {
+  color: #ffb21a;
 }
 
 @media (max-width: 1510px) {
   .project-tree {
-    padding: 14px;
+    padding: 8px 12px 10px;
     border-radius: 16px;
   }
 
-  .project-tree h2 {
-    margin-top: 10px;
-    font-size: 17px;
-  }
-
-  .project-tree-intro {
-    margin-bottom: 11px;
+  .project-tree-heading span {
     font-size: 10px;
   }
 
-  .project-tree-actions {
-    gap: 7px;
+  .project-tree-heading h2 {
+    margin-top: 2px;
+    font-size: 14px;
   }
 
-  .project-tree-actions button {
-    grid-template-columns: 28px minmax(0, 1fr) auto;
-    gap: 8px;
-    min-height: 49px;
-    padding: 7px 8px;
-    border-radius: 9px;
-  }
-
-  .project-tree-action-icon {
-    width: 28px;
-    height: 28px;
-    border-radius: 7px;
-    font-size: 11px;
-  }
-
-  .project-tree-actions strong {
+  .project-tree-heading p {
+    max-width: 430px;
     font-size: 10px;
   }
 
-  .project-tree-actions small {
+  .project-genealogy-map {
+    min-height: 0;
+    margin-top: 0;
+  }
+
+  .project-genealogy-lines {
+    height: 24px;
+    margin: -1px auto -6px;
+  }
+
+  .project-tree-root-orb {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+  }
+
+  .project-tree-root-orb svg {
+    width: 23px;
+    height: 23px;
+  }
+
+  .project-tree-root-node strong {
+    margin-top: 3px;
+    padding: 2px 7px;
+    font-size: 10px;
+  }
+
+  .project-tree-root-node small {
     font-size: 8px;
+  }
+
+  .project-tree-branches {
+    gap: 7px;
+    margin-top: 0;
+  }
+
+  .project-tree-node {
+    min-height: 68px;
+    padding: 4px 5px 5px;
+    border-radius: 12px;
+  }
+
+  .project-tree-node-icon {
+    width: 20px;
+    height: 20px;
+    margin-top: 3px;
+  }
+
+  .project-tree-node-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .project-tree-node strong {
+    margin-top: 3px;
+    font-size: 8px;
+  }
+
+  .project-tree-node small {
+    max-width: 92px;
+    margin-top: 2px;
+    font-size: 8px;
+    line-height: 1.2;
+  }
+
+  .project-tree-node-action {
+    margin-top: 3px;
+    padding: 2px 6px;
+    font-size: 6px;
   }
 }
 
 @media (max-width: 760px) {
-  .project-tree-actions {
+  .project-genealogy-map {
+    min-height: 0;
+  }
+
+  .project-genealogy-lines {
+    display: none;
+  }
+
+  .project-tree-branches {
     grid-template-columns: 1fr;
+    margin-top: 24px;
+  }
+
+  .project-tree-node {
+    clip-path: none;
+    min-height: 0;
+    border-radius: 16px;
   }
 }

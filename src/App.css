@@ -206,6 +206,16 @@ button {
   background: rgba(80, 210, 255, 0.04);
 }
 
+.project-tree-placeholder {
+  display: grid;
+  min-height: 100%;
+  place-items: center;
+  border: 1px dashed var(--border-soft);
+  border-radius: 16px;
+  color: var(--text-secondary);
+  background: rgba(80, 210, 255, 0.04);
+}
+
 .vesper-app {
   max-width: 1920px;
   padding: 16px;
@@ -341,7 +351,7 @@ button {
 }
 
 .project-status-legend .active { background: #54d6ff; }
-.project-status-legend .pause { background: #c084fc; }
+.project-status-legend .paused { background: #f59e0b; }
 .project-status-legend .concept { background: #a855f7; }
 .project-status-legend .archived { background: #64748b; }
 
@@ -368,24 +378,24 @@ button {
 }
 
 .cockpit-layout-projects {
-  padding: 20px;
+  padding: 8px 10px;
 }
 
 .cockpit-section-heading {
   min-height: 0;
-  margin-bottom: 16px;
+  margin-bottom: 6px;
 }
 
 .cockpit-section-heading h2 {
-  margin-top: 3px;
-  font-size: 24px;
+  margin-top: 2px;
+  font-size: 15px;
   letter-spacing: -0.02em;
   text-transform: none;
 }
 
 .project-list {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
 }
 
 @media (max-width: 1510px) {
@@ -422,19 +432,19 @@ button {
   }
 
   .cockpit-layout-projects {
-    padding: 14px;
+    padding: 7px 9px;
   }
 
   .cockpit-section-heading {
-    margin-bottom: 11px;
+    margin-bottom: 6px;
   }
 
   .cockpit-section-heading h2 {
-    font-size: 18px;
+    font-size: 13px;
   }
 
   .project-list {
-    gap: 8px;
+    gap: 6px;
   }
 }
 
@@ -466,12 +476,12 @@ button {
   }
 
   .cockpit-section-heading {
-    min-height: 24px;
-    margin-bottom: 11px;
+    min-height: 20px;
+    margin-bottom: 6px;
   }
 
   .cockpit-section-heading h2 {
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .cockpit-section-heading > span {
@@ -487,13 +497,13 @@ button {
   }
 
   .companion-settings-trigger {
-    min-height: 24px;
-    padding-inline: 8px;
-    font-size: 9px;
+    min-height: 20px;
+    padding-inline: 7px;
+    font-size: 8px;
   }
 
   .project-list {
-    gap: 13px;
+    gap: 6px;
   }
 }
 

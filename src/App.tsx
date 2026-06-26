@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { emitTo } from "@tauri-apps/api/event";
+import { emitTo, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { CockpitLayout } from "./components/CockpitLayout/CockpitLayout";
 import { ContextPanel } from "./components/ContextPanel/ContextPanel";
 import {
@@ -50,6 +51,9 @@ type LocalProject = {
 
 const projectsRoot = "C:\\Ph3yNyx.OS\\05_⭐VESPΣR";
 const companionSettingsStorageKey = "vesperion-companion-settings";
+const companionWindowLabel = "vesperion";
+const trayToggleCompanionEvent = "tray-toggle-companion";
+const trayRefreshAppEvent = "tray-refresh-app";
 
 const globalAccesses = [
   { label: "Obsidian", icon: "◈" },
@@ -87,6 +91,50 @@ function formatModifiedDate(epochSeconds?: number) {
     month: "2-digit",
     day: "2-digit",
   }).format(new Date(epochSeconds * 1000));
+}
+
+async function ensureCompanionWindow() {
+  const existingWindow = await WebviewWindow.getByLabel(companionWindowLabel);
+  if (existingWindow) {
+    await existingWindow.show();
+    return existingWindow;
+  }
+
+  const companionWindow = new WebviewWindow(companionWindowLabel, {
+    title: "VESPΣRION",
+    url: "index.html?window=vesperion",
+    width: 380,
+    height: 240,
+    resizable: false,
+    decorations: false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    shadow: false,
+    focus: false,
+    visible: true,
+    parent: "main",
+  });
+
+  await new Promise<void>((resolve, reject) => {
+    const handleCreated = () => resolve();
+    const handleError = (event: { payload: unknown }) => reject(event.payload);
+
+    void companionWindow.once("tauri://created", handleCreated);
+    void companionWindow.once("tauri://error", handleError);
+  });
+
+  await companionWindow.show();
+
+  return companionWindow;
+}
+
+async function destroyCompanionWindow() {
+  const companionWindow = await WebviewWindow.getByLabel(companionWindowLabel);
+
+  if (companionWindow) {
+    await companionWindow.destroy();
+  }
 }
 
 function getProjectIcon(name: string) {
@@ -179,12 +227,57 @@ function App() {
       JSON.stringify(companionSettings),
     );
 
-    void invoke("apply_companion_settings", {
-      settings: companionSettings,
-    }).catch((error: unknown) => {
-      console.error("Unable to apply VESPΣRION settings", error);
-    });
+    void (async () => {
+      try {
+        if (!companionSettings.visible) {
+          await destroyCompanionWindow();
+          return;
+        }
+
+        const companionWindow = await ensureCompanionWindow();
+        await companionWindow.emit("vesperion-settings", companionSettings);
+      } catch (error: unknown) {
+        console.error("Unable to apply VESPΣRION settings", error);
+      }
+    })();
   }, [companionSettings]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const stopListening: Array<() => void> = [];
+
+    void listen(trayToggleCompanionEvent, () => {
+      if (!isMounted) return;
+
+      setCompanionSettings((currentSettings) => ({
+        ...currentSettings,
+        visible: !currentSettings.visible,
+      }));
+    }).then((unlisten) => {
+      if (!isMounted) {
+        unlisten();
+        return;
+      }
+
+      stopListening.push(unlisten);
+    });
+
+    void listen(trayRefreshAppEvent, () => {
+      window.location.reload();
+    }).then((unlisten) => {
+      if (!isMounted) {
+        unlisten();
+        return;
+      }
+
+      stopListening.push(unlisten);
+    });
+
+    return () => {
+      isMounted = false;
+      stopListening.forEach((unlisten) => unlisten());
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -330,6 +423,34 @@ function App() {
       await notifyVesperion("success", branch.label);
     } catch {
       await notifyVesperion("error", branch.label);
+    }
+  }
+
+  async function openProjectInVsCode() {
+    if (!activeProject) return;
+
+    try {
+      await invoke("open_project_vscode", {
+        projectName: activeProject.name,
+      });
+      await notifyVesperion("success", "VS Code");
+    } catch (error: unknown) {
+      console.error("Unable to open the project in VS Code", error);
+      await notifyVesperion("error", "VS Code");
+    }
+  }
+
+  async function openProjectGithub() {
+    if (!activeProject) return;
+
+    try {
+      await invoke("open_project_github", {
+        projectPath: activeProject.locationLabel,
+      });
+      await notifyVesperion("success", "GitHub");
+    } catch (error: unknown) {
+      console.error("Unable to open the project GitHub page", error);
+      await notifyVesperion("error", "GitHub");
     }
   }
 
@@ -511,6 +632,8 @@ function App() {
               sessionEnd={activeProject.sessionEnd}
               contextCopyState={contextCopyState}
               sessionCopyState={sessionCopyState}
+              onOpenVsCode={openProjectInVsCode}
+              onOpenGithub={openProjectGithub}
               onCopyContext={copyProjectContext}
               onCopySession={copySessionMarkdown}
             />

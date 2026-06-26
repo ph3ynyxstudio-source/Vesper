@@ -11,6 +11,8 @@ type ContextPanelProps = {
   sessionEnd: string;
   contextCopyState?: "idle" | "copied" | "error";
   sessionCopyState?: "idle" | "copied" | "error";
+  onOpenVsCode?: () => void;
+  onOpenGithub?: () => void;
   onCopyContext?: () => void;
   onCopySession?: () => void;
 };
@@ -32,6 +34,8 @@ export function ContextPanel({
   sessionEnd,
   contextCopyState = "idle",
   sessionCopyState = "idle",
+  onOpenVsCode,
+  onOpenGithub,
   onCopyContext,
   onCopySession,
 }: ContextPanelProps) {
@@ -80,6 +84,25 @@ export function ContextPanel({
         <h3>Résumé contexte</h3>
         <p>{summary}</p>
       </section>
+
+      <div className="context-panel-actions">
+        <button
+          className="context-panel-action-button"
+          type="button"
+          onClick={onOpenVsCode}
+          disabled={!onOpenVsCode}
+        >
+          Ouvrir dans VS Code
+        </button>
+        <button
+          className="context-panel-action-button"
+          type="button"
+          onClick={onOpenGithub}
+          disabled={!onOpenGithub}
+        >
+          Ouvrir GitHub
+        </button>
+      </div>
 
       <button
         className="context-panel-copy"

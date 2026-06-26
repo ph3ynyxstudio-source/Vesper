@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "vesper",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "identifier": "com.pheyr.vesper",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -16,20 +16,6 @@
         "title": "vesper",
         "width": 800,
         "height": 600
-      },
-      {
-        "label": "vesperion",
-        "title": "VESPΣRION",
-        "url": "index.html?window=vesperion",
-        "width": 380,
-        "height": 240,
-        "resizable": false,
-        "decorations": false,
-        "transparent": true,
-        "alwaysOnTop": true,
-        "skipTaskbar": true,
-        "shadow": false,
-        "focus": false
       }
     ],
     "security": {

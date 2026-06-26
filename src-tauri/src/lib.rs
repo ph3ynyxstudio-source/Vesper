@@ -1,7 +1,22 @@
-use tauri::{Emitter, Manager};
+use tauri::{
+    menu::{Menu, MenuItem},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    Emitter, Manager, WindowEvent,
+};
 use tauri_plugin_opener::OpenerExt;
 
 const PROJECTS_ROOT: &str = r"C:\Ph3yNyx.OS\05_⭐VESPΣR";
+const VSCODE_LUNAR_PATH: &str = r"C:\Ph3yNyx.OS\Devs\Lun4rMood";
+const VSCODE_CHRONOS_PATH: &str = r"C:\Ph3yNyx.OS\Devs\Chr0nosV3rs";
+const VSCODE_ASTRAL_PATH: &str = r"C:\Ph3yNyx.OS\Devs\Astr4lDesign";
+const VSCODE_VESPER_PATH: &str = r"C:\Ph3yNyx.OS\Devs\Vesper";
+const MAIN_WINDOW_LABEL: &str = "main";
+const OPEN_VESPER_MENU_ID: &str = "open_vesper";
+const TOGGLE_COMPANION_MENU_ID: &str = "toggle_companion";
+const REFRESH_VESPER_MENU_ID: &str = "refresh_vesper";
+const QUIT_VESPER_MENU_ID: &str = "quit_vesper";
+const TRAY_TOGGLE_COMPANION_EVENT: &str = "tray-toggle-companion";
+const TRAY_REFRESH_APP_EVENT: &str = "tray-refresh-app";
 
 #[derive(Debug, serde::Serialize)]
 struct ProjectDirectory {
@@ -19,14 +34,72 @@ struct ProjectBranch {
     exists: bool,
 }
 
-#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
-struct CompanionSettings {
-    visible: bool,
-    shadow: bool,
-}
-
 fn is_valid_project_status(status: &str) -> bool {
     matches!(status, "active" | "paused" | "concept" | "archived")
+}
+
+fn vscode_project_path(project_name: &str) -> Option<&'static str> {
+    let normalized_name = project_name.to_lowercase();
+
+    if normalized_name.contains("lun") {
+        Some(VSCODE_LUNAR_PATH)
+    } else if normalized_name.contains("hr0nos") || normalized_name.contains("chr0nos") {
+        Some(VSCODE_CHRONOS_PATH)
+    } else if normalized_name.contains("astr4l") {
+        Some(VSCODE_ASTRAL_PATH)
+    } else if normalized_name.contains("vesp") {
+        Some(VSCODE_VESPER_PATH)
+    } else {
+        None
+    }
+}
+
+fn show_main_window(app: &tauri::AppHandle) -> Result<(), tauri::Error> {
+    if let Some(window) = app.get_webview_window(MAIN_WINDOW_LABEL) {
+        window.show()?;
+        if window.is_minimized()? {
+            window.unminimize()?;
+        }
+        window.set_focus()?;
+    }
+
+    Ok(())
+}
+
+fn github_shortcut_path(project_path: &std::path::Path) -> Result<std::path::PathBuf, &'static str> {
+    let entries = std::fs::read_dir(project_path).map_err(|_| "read_failed")?;
+
+    for entry in entries {
+        let entry = entry.map_err(|_| "read_failed")?;
+        let path = entry.path();
+        let is_url = path
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .map(|extension| extension.eq_ignore_ascii_case("url"))
+            .unwrap_or(false);
+        let contains_git = path
+            .file_name()
+            .and_then(|file_name| file_name.to_str())
+            .map(|file_name| file_name.to_lowercase().contains("git"))
+            .unwrap_or(false);
+
+        if path.is_file() && is_url && contains_git {
+            return Ok(path);
+        }
+    }
+
+    Err("git_shortcut_missing")
+}
+
+fn github_url_from_shortcut(shortcut_path: &std::path::Path) -> Result<String, &'static str> {
+    let file_contents = std::fs::read_to_string(shortcut_path).map_err(|_| "read_failed")?;
+
+    file_contents
+        .lines()
+        .find_map(|line| line.strip_prefix("URL=").map(str::trim))
+        .filter(|url| !url.is_empty())
+        .map(str::to_owned)
+        .ok_or("git_url_missing")
 }
 
 fn read_project_status(project_path: &std::path::Path) -> String {
@@ -92,6 +165,31 @@ fn open_project_directory(app: tauri::AppHandle, path: &str) -> Result<(), &'sta
 
     app.opener()
         .open_path(requested_path.to_string_lossy().as_ref(), None::<&str>)
+        .map_err(|_| "open_failed")
+}
+
+#[tauri::command]
+fn open_project_vscode(app: tauri::AppHandle, project_name: &str) -> Result<(), &'static str> {
+    let project_path = vscode_project_path(project_name).ok_or("project_not_mapped")?;
+    let path = std::path::Path::new(project_path);
+
+    if !path.is_dir() {
+        return Err("vscode_project_missing");
+    }
+
+    app.opener()
+        .open_path(path.to_string_lossy().into_owned(), Some("code"))
+        .map_err(|_| "open_failed")
+}
+
+#[tauri::command]
+fn open_project_github(app: tauri::AppHandle, project_path: &str) -> Result<(), &'static str> {
+    let project_path = canonical_project_path(project_path)?;
+    let shortcut_path = github_shortcut_path(&project_path)?;
+    let github_url = github_url_from_shortcut(&shortcut_path)?;
+
+    app.opener()
+        .open_url(github_url, None::<&str>)
         .map_err(|_| "open_failed")
 }
 
@@ -211,29 +309,6 @@ fn update_project_status(project_path: &str, status: &str) -> Result<(), &'stati
 }
 
 #[tauri::command]
-fn apply_companion_settings(
-    app: tauri::AppHandle,
-    settings: CompanionSettings,
-) -> Result<(), &'static str> {
-    let window = app
-        .get_webview_window("vesperion")
-        .ok_or("vesperion_window_missing")?;
-
-    if settings.visible {
-        window.show().map_err(|_| "show_failed")?;
-    }
-
-    app.emit_to("vesperion", "vesperion-settings", settings.clone())
-        .map_err(|_| "emit_failed")?;
-
-    if !settings.visible {
-        window.hide().map_err(|_| "hide_failed")?;
-    }
-
-    Ok(())
-}
-
-#[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
@@ -290,6 +365,72 @@ async fn drag_vesperion(window: tauri::WebviewWindow) -> Result<(), String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .setup(|app| {
+            let open_item =
+                MenuItem::with_id(app, OPEN_VESPER_MENU_ID, "Ouvrir VespΣr", true, None::<&str>)?;
+            let toggle_companion_item = MenuItem::with_id(
+                app,
+                TOGGLE_COMPANION_MENU_ID,
+                "Afficher / masquer le compagnon",
+                true,
+                None::<&str>,
+            )?;
+            let refresh_item = MenuItem::with_id(
+                app,
+                REFRESH_VESPER_MENU_ID,
+                "Rafraîchir l'app",
+                true,
+                None::<&str>,
+            )?;
+            let quit_item =
+                MenuItem::with_id(app, QUIT_VESPER_MENU_ID, "Quitter", true, None::<&str>)?;
+            let menu = Menu::with_items(
+                app,
+                &[&open_item, &toggle_companion_item, &refresh_item, &quit_item],
+            )?;
+            let tray_icon = app.default_window_icon().cloned();
+
+            TrayIconBuilder::with_id("vesper-tray")
+                .icon(tray_icon.ok_or("missing_default_icon")?)
+                .menu(&menu)
+                .show_menu_on_left_click(false)
+                .on_menu_event(|app, event| match event.id().as_ref() {
+                    OPEN_VESPER_MENU_ID => {
+                        let _ = show_main_window(app);
+                    }
+                    TOGGLE_COMPANION_MENU_ID => {
+                        let _ = app.emit_to(MAIN_WINDOW_LABEL, TRAY_TOGGLE_COMPANION_EVENT, ());
+                    }
+                    REFRESH_VESPER_MENU_ID => {
+                        let _ = app.emit_to(MAIN_WINDOW_LABEL, TRAY_REFRESH_APP_EVENT, ());
+                    }
+                    QUIT_VESPER_MENU_ID => {
+                        app.exit(0);
+                    }
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        let _ = show_main_window(tray.app_handle());
+                    }
+                })
+                .build(app)?;
+
+            Ok(())
+        })
+        .on_window_event(|window, event| {
+            if window.label() == MAIN_WINDOW_LABEL {
+                if let WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
+        })
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             greet,
@@ -298,7 +439,8 @@ pub fn run() {
             list_project_genealogy,
             update_project_status,
             open_project_directory,
-            apply_companion_settings
+            open_project_vscode,
+            open_project_github,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

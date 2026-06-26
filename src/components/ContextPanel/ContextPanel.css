@@ -324,6 +324,14 @@
   font-size: 13px;
 }
 
+.context-panel-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.context-panel-action-button,
 .context-panel-copy,
 .context-panel-session-copy {
   width: 100%;
@@ -378,6 +386,8 @@
   white-space: pre-wrap;
 }
 
+.context-panel-action-button:hover:not(:disabled),
+.context-panel-action-button:focus-visible,
 .context-panel-copy:hover:not(:disabled),
 .context-panel-session-copy:hover:not(:disabled),
 .context-panel-copy:focus-visible,
@@ -385,6 +395,13 @@
   border-color: var(--accent-blue);
   background: rgba(80, 210, 255, 0.13);
   outline: none;
+}
+
+.context-panel-action-button:disabled,
+.context-panel-copy:disabled,
+.context-panel-session-copy:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .context-panel-copy[data-state="copied"],
@@ -438,6 +455,12 @@
     padding-top: 10px;
   }
 
+  .context-panel-actions {
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .context-panel-action-button,
   .context-panel-copy,
   .context-panel-session-copy {
     padding: 7px 9px;

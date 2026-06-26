@@ -21,7 +21,6 @@ type StoredPosition = {
 };
 
 type CompanionSettings = {
-  visible: boolean;
   shadow: boolean;
 };
 
@@ -49,16 +48,15 @@ function readStoredPosition(): StoredPosition | null {
 function readCompanionSettings(): CompanionSettings {
   try {
     const storedSettings = localStorage.getItem(companionSettingsStorageKey);
-    if (!storedSettings) return { visible: true, shadow: true };
+    if (!storedSettings) return { shadow: true };
 
     const settings = JSON.parse(storedSettings) as Partial<CompanionSettings>;
 
     return {
-      visible: typeof settings.visible === "boolean" ? settings.visible : true,
       shadow: typeof settings.shadow === "boolean" ? settings.shadow : true,
     };
   } catch {
-    return { visible: true, shadow: true };
+    return { shadow: true };
   }
 }
 
@@ -108,10 +106,7 @@ export function VesperionOverlay() {
     let stopListening: (() => void) | undefined;
 
     void listen<CompanionSettings>("vesperion-settings", ({ payload }) => {
-      if (
-        typeof payload.visible !== "boolean" ||
-        typeof payload.shadow !== "boolean"
-      ) {
+      if (typeof payload.shadow !== "boolean") {
         return;
       }
 
@@ -221,14 +216,12 @@ export function VesperionOverlay() {
           <span>{feedback.accessLabel}</span>
         </div>
       ) : null}
-      {companionSettings.visible ? (
-        <VesperionPet
-          animation={animation}
-          dragging={isDragging}
-          shadow={companionSettings.shadow}
-          onPointerDown={startDragging}
-        />
-      ) : null}
+      <VesperionPet
+        animation={animation}
+        dragging={isDragging}
+        shadow={companionSettings.shadow}
+        onPointerDown={startDragging}
+      />
     </main>
   );
 }

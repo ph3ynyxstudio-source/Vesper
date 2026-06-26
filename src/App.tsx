@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { emitTo } from "@tauri-apps/api/event";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { CockpitLayout } from "./components/CockpitLayout/CockpitLayout";
 import { ContextPanel } from "./components/ContextPanel/ContextPanel";
 import {
@@ -164,6 +165,12 @@ function App() {
     return () => {
       isMounted = false;
     };
+  }, []);
+
+  useEffect(() => {
+    void getCurrentWindow().setIcon(vesperionIcon).catch((error: unknown) => {
+      console.error("Unable to set window icon", error);
+    });
   }, []);
 
   useEffect(() => {

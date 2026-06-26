@@ -116,7 +116,7 @@ export function ContextPanel({
 
       <section className="context-panel-section context-panel-session">
         <div className="context-panel-session-heading">
-          <span>Fin de session chr0</span>
+          <span>Fin de session</span>
           <small>Markdown</small>
         </div>
         <pre>{sessionEnd}</pre>

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import "./ProjectCard.css";
 
@@ -6,7 +6,8 @@ export type ProjectStatus = "active" | "paused" | "concept" | "archived";
 
 type ProjectCardProps = {
   name: string;
-  icon?: string;
+  icon?: ReactNode;
+  iconTone?: "gold" | "purple" | "magenta" | "blue" | "default";
   status: ProjectStatus;
   isActive?: boolean;
   onClick?: () => void;
@@ -38,6 +39,7 @@ const estimatedPopoverHeight = 176;
 export function ProjectCard({
   name,
   icon = "□",
+  iconTone = "default",
   status,
   isActive = false,
   onClick,
@@ -143,7 +145,7 @@ export function ProjectCard({
         onClick={onClick}
         aria-pressed={isActive}
       >
-        <div className="project-card-icon" aria-hidden="true">
+        <div className={`project-card-icon tone-${iconTone}`} aria-hidden="true">
           {icon}
         </div>
 

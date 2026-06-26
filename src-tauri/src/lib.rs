@@ -10,6 +10,23 @@ const VSCODE_LUNAR_PATH: &str = r"C:\Ph3yNyx.OS\Devs\Lun4rMood";
 const VSCODE_CHRONOS_PATH: &str = r"C:\Ph3yNyx.OS\Devs\Chr0nosV3rs";
 const VSCODE_ASTRAL_PATH: &str = r"C:\Ph3yNyx.OS\Devs\Astr4lDesign";
 const VSCODE_VESPER_PATH: &str = r"C:\Ph3yNyx.OS\Devs\Vesper";
+const SESSION_VESPER_RAW_PATH: &str =
+    r"C:\Users\pheyr\AppData\Roaming\com.ph3yn.chronosvers\projects\VespΣr\raw";
+const SESSION_LUNAR_RAW_PATH: &str =
+    r"C:\Users\pheyr\AppData\Roaming\com.ph3yn.chronosvers\projects\LunarMood\raw";
+const SESSION_CHRONOS_RAW_PATH: &str =
+    r"C:\Users\pheyr\AppData\Roaming\com.ph3yn.chronosvers\projects\ChronoVers\raw";
+const SESSION_ASTRAL_RAW_PATH: &str =
+    r"C:\Users\pheyr\AppData\Roaming\com.ph3yn.chronosvers\projects\Astr4lForge\raw";
+const GLOBAL_OBSIDIAN_SHORTCUT_PATH: &str =
+    r"C:\Users\pheyr\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Obsidian.lnk";
+const GLOBAL_VSCODE_SHORTCUT_PATH: &str =
+    r"C:\Users\pheyr\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Visual Studio Code.lnk";
+const GLOBAL_EXPLORER_PATH: &str = r"C:\Ph3yNyx.OS";
+const GLOBAL_GITHUB_URL: &str = "https://github.com/ph3ynyxstudio-source";
+const GLOBAL_TERMINAL_PATH: &str = r"C:\Ph3yNyx.OS";
+const WINDOWS_TERMINAL_EXE: &str = "wt.exe";
+const WINDOWS_POWERSHELL_EXE: &str = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe";
 const MAIN_WINDOW_LABEL: &str = "main";
 const OPEN_VESPER_MENU_ID: &str = "open_vesper";
 const TOGGLE_COMPANION_MENU_ID: &str = "toggle_companion";
@@ -32,6 +49,12 @@ struct ProjectBranch {
     label: String,
     path: Option<String>,
     exists: bool,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct SessionSnapshot {
+    content: String,
+    display_date: String,
 }
 
 fn is_valid_project_status(status: &str) -> bool {
@@ -66,6 +89,22 @@ fn show_main_window(app: &tauri::AppHandle) -> Result<(), tauri::Error> {
     Ok(())
 }
 
+fn chronosvers_raw_path(project_name: &str) -> Option<&'static str> {
+    let normalized_name = project_name.to_lowercase();
+
+    if normalized_name.contains("lun") {
+        Some(SESSION_LUNAR_RAW_PATH)
+    } else if normalized_name.contains("hr0nos") || normalized_name.contains("chr0nos") {
+        Some(SESSION_CHRONOS_RAW_PATH)
+    } else if normalized_name.contains("astr4l") {
+        Some(SESSION_ASTRAL_RAW_PATH)
+    } else if normalized_name.contains("vesp") {
+        Some(SESSION_VESPER_RAW_PATH)
+    } else {
+        None
+    }
+}
+
 fn github_shortcut_path(project_path: &std::path::Path) -> Result<std::path::PathBuf, &'static str> {
     let entries = std::fs::read_dir(project_path).map_err(|_| "read_failed")?;
 
@@ -91,6 +130,61 @@ fn github_shortcut_path(project_path: &std::path::Path) -> Result<std::path::Pat
     Err("git_shortcut_missing")
 }
 
+fn official_context_path(
+    project_path: &std::path::Path,
+) -> Result<std::path::PathBuf, &'static str> {
+    if let Some(mapped_path) = mapped_official_context_path(project_path) {
+        if mapped_path.is_file() {
+            return Ok(mapped_path);
+        }
+    }
+
+    let entries = std::fs::read_dir(project_path).map_err(|_| "read_failed")?;
+
+    for entry in entries {
+        let entry = entry.map_err(|_| "read_failed")?;
+        let path = entry.path();
+        let is_markdown = path
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .map(|extension| extension.eq_ignore_ascii_case("md"))
+            .unwrap_or(false);
+        let is_context_file = path
+            .file_name()
+            .and_then(|file_name| file_name.to_str())
+            .map(|file_name| {
+                let normalized_name = file_name.to_lowercase();
+                normalized_name.contains("contexte officiel")
+                    || normalized_name.contains("context officiel")
+                    || normalized_name.contains("officiel")
+            })
+            .unwrap_or(false);
+
+        if path.is_file() && is_markdown && is_context_file {
+            return Ok(path);
+        }
+    }
+
+    Err("official_context_missing")
+}
+
+fn mapped_official_context_path(project_path: &std::path::Path) -> Option<std::path::PathBuf> {
+    let project_name = project_path.file_name()?.to_string_lossy().to_lowercase();
+    let file_name = if project_name.contains("lun") {
+        Some("🌙Lun△rMood — CONTEXTE OFFICIEL.md")
+    } else if project_name.contains("hr0nos") || project_name.contains("chr0nos") {
+        Some("⏳↻hr0nosV3rs — CONTEXTE OFFICIEL.md")
+    } else if project_name.contains("astr4l") {
+        Some("Astr4l Ecosystem - CONTEXTE OFFICIEL.md")
+    } else if project_name.contains("vesp") {
+        Some("⭐VESPΣR — CONTEXTE OFFICIEL.md")
+    } else {
+        None
+    }?;
+
+    Some(project_path.join(file_name))
+}
+
 fn github_url_from_shortcut(shortcut_path: &std::path::Path) -> Result<String, &'static str> {
     let file_contents = std::fs::read_to_string(shortcut_path).map_err(|_| "read_failed")?;
 
@@ -100,6 +194,74 @@ fn github_url_from_shortcut(shortcut_path: &std::path::Path) -> Result<String, &
         .filter(|url| !url.is_empty())
         .map(str::to_owned)
         .ok_or("git_url_missing")
+}
+
+fn latest_file_in_directory(directory_path: &std::path::Path) -> Result<std::path::PathBuf, &'static str> {
+    let entries = std::fs::read_dir(directory_path).map_err(|_| "read_failed")?;
+    let mut latest: Option<(std::time::SystemTime, std::path::PathBuf)> = None;
+
+    for entry in entries {
+        let entry = entry.map_err(|_| "read_failed")?;
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+
+        let modified_at = entry
+            .metadata()
+            .map_err(|_| "read_failed")?
+            .modified()
+            .map_err(|_| "read_failed")?;
+
+        match &latest {
+            Some((current_modified_at, _)) if modified_at <= *current_modified_at => {}
+            _ => latest = Some((modified_at, path)),
+        }
+    }
+
+    latest
+        .map(|(_, path)| path)
+        .ok_or("latest_session_missing")
+}
+
+fn session_date_from_file_name(file_path: &std::path::Path) -> Option<String> {
+    let file_name = file_path.file_stem()?.to_string_lossy();
+    let chars = file_name.chars().collect::<Vec<_>>();
+
+    for start in 0..chars.len() {
+        let year = chars.get(start..start + 4)?;
+        if !year.iter().all(char::is_ascii_digit) {
+            continue;
+        }
+
+        let first_separator = *chars.get(start + 4)?;
+        if !matches!(first_separator, '-' | '_' | '.' | ' ') {
+            continue;
+        }
+
+        let month = chars.get(start + 5..start + 7)?;
+        if !month.iter().all(char::is_ascii_digit) {
+            continue;
+        }
+
+        let second_separator = *chars.get(start + 7)?;
+        if second_separator != first_separator && !matches!(second_separator, '-' | '_' | '.' | ' ') {
+            continue;
+        }
+
+        let day = chars.get(start + 8..start + 10)?;
+        if !day.iter().all(char::is_ascii_digit) {
+            continue;
+        }
+
+        let year = year.iter().collect::<String>();
+        let month = month.iter().collect::<String>();
+        let day = day.iter().collect::<String>();
+
+        return Some(format!("{year}-{month}-{day}"));
+    }
+
+    None
 }
 
 fn read_project_status(project_path: &std::path::Path) -> String {
@@ -191,6 +353,67 @@ fn open_project_github(app: tauri::AppHandle, project_path: &str) -> Result<(), 
     app.opener()
         .open_url(github_url, None::<&str>)
         .map_err(|_| "open_failed")
+}
+
+#[tauri::command]
+fn read_project_official_context(project_path: &str) -> Result<String, &'static str> {
+    let project_path = canonical_project_path(project_path)?;
+    let context_path = official_context_path(&project_path)?;
+
+    std::fs::read_to_string(context_path).map_err(|_| "read_failed")
+}
+
+#[tauri::command]
+fn read_latest_project_session_markdown(project_name: &str) -> Result<String, &'static str> {
+    Ok(read_latest_project_session_snapshot(project_name)?.content)
+}
+
+#[tauri::command]
+fn read_latest_project_session_snapshot(project_name: &str) -> Result<SessionSnapshot, &'static str> {
+    let raw_path = chronosvers_raw_path(project_name).ok_or("project_not_mapped")?;
+    let raw_path = std::path::Path::new(raw_path);
+
+    if !raw_path.is_dir() {
+        return Err("raw_directory_missing");
+    }
+
+    let latest_file_path = latest_file_in_directory(raw_path)?;
+    let content = std::fs::read_to_string(&latest_file_path).map_err(|_| "read_failed")?;
+    let display_date =
+        session_date_from_file_name(&latest_file_path).unwrap_or_else(|| "Non disponible".into());
+
+    Ok(SessionSnapshot {
+        content,
+        display_date,
+    })
+}
+
+#[tauri::command]
+fn open_global_access(app: tauri::AppHandle, access_label: &str) -> Result<(), &'static str> {
+    match access_label {
+        "Obsidian" => app
+            .opener()
+            .open_path(GLOBAL_OBSIDIAN_SHORTCUT_PATH, None::<&str>)
+            .map_err(|_| "open_failed"),
+        "GitHub" => app
+            .opener()
+            .open_url(GLOBAL_GITHUB_URL, None::<&str>)
+            .map_err(|_| "open_failed"),
+        "Explorateur" => app
+            .opener()
+            .open_path(GLOBAL_EXPLORER_PATH, None::<&str>)
+            .map_err(|_| "open_failed"),
+        "VS Code" => app
+            .opener()
+            .open_path(GLOBAL_VSCODE_SHORTCUT_PATH, None::<&str>)
+            .map_err(|_| "open_failed"),
+        "Terminal" => std::process::Command::new(WINDOWS_TERMINAL_EXE)
+            .args(["-d", GLOBAL_TERMINAL_PATH, WINDOWS_POWERSHELL_EXE, "-NoExit"])
+            .spawn()
+            .map(|_| ())
+            .map_err(|_| "open_failed"),
+        _ => Err("unknown_access"),
+    }
 }
 
 fn canonical_project_path(path: &str) -> Result<std::path::PathBuf, &'static str> {
@@ -441,6 +664,10 @@ pub fn run() {
             open_project_directory,
             open_project_vscode,
             open_project_github,
+            open_global_access,
+            read_project_official_context,
+            read_latest_project_session_markdown,
+            read_latest_project_session_snapshot,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -448,7 +675,8 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::matching_branch_dir;
+    use super::{matching_branch_dir, session_date_from_file_name};
+    use std::path::Path;
 
     fn names(values: &[&str]) -> Vec<String> {
         values.iter().map(|value| (*value).into()).collect()
@@ -510,5 +738,17 @@ mod tests {
         let directories = names(&["01_Project_Assets"]);
 
         assert_eq!(matching_branch_dir("features", "Features", &directories), None);
+    }
+
+    #[test]
+    fn extracts_session_date_from_file_name() {
+        assert_eq!(
+            session_date_from_file_name(Path::new("2026-06-24 - Fin de session.md")),
+            Some("2026-06-24".into())
+        );
+        assert_eq!(
+            session_date_from_file_name(Path::new("Journal_2026_07_03_raw.md")),
+            Some("2026-07-03".into())
+        );
     }
 }

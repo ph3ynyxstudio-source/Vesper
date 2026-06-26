@@ -62,6 +62,51 @@
   color: var(--accent-blue, rgb(84, 214, 255));
   background: rgba(80, 210, 255, 0.08);
   font-size: 18px;
+  box-shadow:
+    inset 0 0 14px rgba(80, 210, 255, 0.08),
+    0 0 10px rgba(80, 210, 255, 0.08);
+}
+
+.project-card-icon svg {
+  width: 22px;
+  height: 22px;
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
+.project-card-icon.tone-gold {
+  border-color: rgba(255, 188, 59, 0.5);
+  color: #ffbf47;
+  background: rgba(255, 178, 26, 0.09);
+  box-shadow:
+    inset 0 0 14px rgba(255, 178, 26, 0.12),
+    0 0 12px rgba(255, 178, 26, 0.1);
+}
+
+.project-card-icon.tone-purple {
+  border-color: rgba(196, 132, 252, 0.54);
+  color: #d78cff;
+  background: rgba(168, 85, 247, 0.1);
+  box-shadow:
+    inset 0 0 14px rgba(168, 85, 247, 0.12),
+    0 0 12px rgba(168, 85, 247, 0.1);
+}
+
+.project-card-icon.tone-magenta {
+  border-color: rgba(224, 87, 255, 0.54);
+  color: #ff68f0;
+  background: rgba(224, 87, 255, 0.1);
+  box-shadow:
+    inset 0 0 14px rgba(224, 87, 255, 0.12),
+    0 0 12px rgba(224, 87, 255, 0.12);
+}
+
+.project-card-icon.tone-blue {
+  border-color: rgba(80, 210, 255, 0.5);
+  color: #50d2ff;
+  background: rgba(80, 210, 255, 0.09);
+  box-shadow:
+    inset 0 0 14px rgba(80, 210, 255, 0.12),
+    0 0 12px rgba(80, 210, 255, 0.1);
 }
 
 .project-card-title-group {
@@ -202,6 +247,11 @@
     height: 28px;
     border-radius: 7px;
     font-size: 16px;
+  }
+
+  .project-card-icon svg {
+    width: 18px;
+    height: 18px;
   }
 
   .project-card-title-group h3 {

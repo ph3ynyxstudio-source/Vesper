@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { emitTo, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -9,6 +9,12 @@ import {
   ProjectCard,
   type ProjectStatus,
 } from "./components/ProjectCard/ProjectCard";
+import {
+  HourglassIcon,
+  MoonIcon,
+  PaintbrushIcon,
+  VesperionIcon as ProjectVesperionIcon,
+} from "./components/ProjectCard/ProjectIcons";
 import {
   ProjectTree,
   type ProjectGenealogyBranch,
@@ -37,9 +43,15 @@ type ProjectBranchResponse = {
   exists: boolean;
 };
 
+type SessionSnapshot = {
+  content: string;
+  display_date: string;
+};
+
 type LocalProject = {
   name: string;
-  icon: string;
+  icon: ReactNode;
+  iconTone: "gold" | "purple" | "magenta" | "blue" | "default";
   type: string;
   description: string;
   status: ProjectStatus;
@@ -57,7 +69,7 @@ const trayRefreshAppEvent = "tray-refresh-app";
 
 const globalAccesses = [
   { label: "Obsidian", icon: "◈" },
-  { label: "GitHub Desktop", icon: "◇" },
+  { label: "GitHub", icon: "◇" },
   { label: "Explorateur", icon: "□" },
   { label: "VS Code", icon: "⌁" },
   { label: "Terminal", icon: ">_" },
@@ -138,16 +150,50 @@ async function destroyCompanionWindow() {
 }
 
 function getProjectIcon(name: string) {
-  if (name.toLowerCase().includes("vesp")) return "✦";
-  return "□";
+  const normalizedName = name.toLowerCase();
+
+  if (normalizedName.includes("hr0nos") || normalizedName.includes("chr0nos")) {
+    return {
+      icon: <HourglassIcon />,
+      iconTone: "gold" as const,
+    };
+  }
+
+  if (normalizedName.includes("lun")) {
+    return {
+      icon: <MoonIcon />,
+      iconTone: "purple" as const,
+    };
+  }
+
+  if (normalizedName.includes("astr4l")) {
+    return {
+      icon: <PaintbrushIcon />,
+      iconTone: "blue" as const,
+    };
+  }
+
+  if (normalizedName.includes("vesp")) {
+    return {
+      icon: <ProjectVesperionIcon />,
+      iconTone: "magenta" as const,
+    };
+  }
+
+  return {
+    icon: "□",
+    iconTone: "default" as const,
+  };
 }
 
 function toLocalProject(directory: ProjectDirectory): LocalProject {
   const lastSession = formatModifiedDate(directory.modified_at_epoch_seconds);
+  const projectIcon = getProjectIcon(directory.name);
 
   return {
     name: directory.name,
-    icon: getProjectIcon(directory.name),
+    icon: projectIcon.icon,
+    iconTone: projectIcon.iconTone,
     type: "Dossier local",
     description: "Projet reflété depuis le dossier VESPΣR.",
     status: directory.status,
@@ -170,6 +216,12 @@ function App() {
   const [projectTreeState, setProjectTreeState] =
     useState<"loading" | "ready" | "error">("loading");
   const [isCompanionPanelOpen, setIsCompanionPanelOpen] = useState(false);
+  const [officialContextContent, setOfficialContextContent] = useState<string>();
+  const [latestSessionMarkdown, setLatestSessionMarkdown] = useState<string>();
+  const [latestSessionDate, setLatestSessionDate] = useState<string>();
+  const [sessionPreviewState, setSessionPreviewState] = useState<
+    "loading" | "ready" | "empty"
+  >("loading");
   const [contextCopyState, setContextCopyState] = useState<CopyState>("idle");
   const [sessionCopyState, setSessionCopyState] = useState<CopyState>("idle");
   const activeProject = useMemo(
@@ -317,6 +369,68 @@ function App() {
     };
   }, [activeProject]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadOfficialContext() {
+      if (!activeProject) {
+        setOfficialContextContent(undefined);
+        return;
+      }
+
+      try {
+        const officialContext = await invoke<string>("read_project_official_context", {
+          projectPath: activeProject.locationLabel,
+        });
+
+        if (!isMounted) return;
+        setOfficialContextContent(officialContext);
+      } catch (error: unknown) {
+        console.error("Unable to load the official project context", error);
+        if (!isMounted) return;
+        setOfficialContextContent(undefined);
+      }
+    }
+
+    async function loadLatestSessionMarkdown() {
+      if (!activeProject) {
+        setLatestSessionMarkdown(undefined);
+        setLatestSessionDate(undefined);
+        setSessionPreviewState("empty");
+        return;
+      }
+
+      setSessionPreviewState("loading");
+
+      try {
+        const latestSession = await invoke<SessionSnapshot>(
+          "read_latest_project_session_snapshot",
+          {
+            projectName: activeProject.name,
+          },
+        );
+
+        if (!isMounted) return;
+        setLatestSessionMarkdown(latestSession.content);
+        setLatestSessionDate(latestSession.display_date);
+        setSessionPreviewState("ready");
+      } catch (error: unknown) {
+        console.error("Unable to load the latest project session markdown", error);
+        if (!isMounted) return;
+        setLatestSessionMarkdown(undefined);
+        setLatestSessionDate(undefined);
+        setSessionPreviewState("empty");
+      }
+    }
+
+    loadOfficialContext();
+    loadLatestSessionMarkdown();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeProject]);
+
   function fallbackCopyText(value: string) {
     const textarea = document.createElement("textarea");
     textarea.value = value;
@@ -343,27 +457,55 @@ function App() {
     setState(didCopy ? "copied" : "error");
   }
 
-  function copyProjectContext() {
+  async function copyProjectContext() {
     if (!activeProject) return;
 
-    return copyText(
-      [
-      activeProject.name,
-      activeProject.summary,
-      `Emplacement : ${activeProject.locationLabel}`,
-      `Dernière session : ${activeProject.lastSession}`,
-      ].join("\n\n"),
-      setContextCopyState,
-    );
+    try {
+      if (officialContextContent) {
+        return copyText(officialContextContent, setContextCopyState);
+      }
+
+      const officialContext = await invoke<string>("read_project_official_context", {
+        projectPath: activeProject.locationLabel,
+      });
+
+      return copyText(officialContext, setContextCopyState);
+    } catch (error: unknown) {
+      console.error("Unable to read the official project context", error);
+
+      return copyText(
+        [
+          activeProject.name,
+          activeProject.summary,
+          `Emplacement : ${activeProject.locationLabel}`,
+          `Dernière session : ${activeProject.lastSession}`,
+        ].join("\n\n"),
+        setContextCopyState,
+      );
+    }
   }
 
-  function copySessionMarkdown() {
+  async function copySessionMarkdown() {
     if (!activeProject) return;
 
-    return copyText(
-      `# Fin de session — ${activeProject.name}\n\n${activeProject.sessionEnd}`,
-      setSessionCopyState,
-    );
+    try {
+      if (latestSessionMarkdown) {
+        return copyText(latestSessionMarkdown, setSessionCopyState);
+      }
+
+      const latestSession = await invoke<SessionSnapshot>("read_latest_project_session_snapshot", {
+        projectName: activeProject.name,
+      });
+
+      return copyText(latestSession.content, setSessionCopyState);
+    } catch (error: unknown) {
+      console.error("Unable to read the latest project session markdown", error);
+
+      return copyText(
+        `# Fin de session — ${activeProject.name}\n\n${activeProject.sessionEnd}`,
+        setSessionCopyState,
+      );
+    }
   }
 
   function selectProject(projectName: string) {
@@ -454,6 +596,20 @@ function App() {
     }
   }
 
+  async function openGlobalAccess(
+    accessLabel: (typeof globalAccesses)[number]["label"],
+  ) {
+    try {
+      await invoke("open_global_access", {
+        accessLabel,
+      });
+      await notifyVesperion("success", accessLabel);
+    } catch (error: unknown) {
+      console.error(`Unable to open global access: ${accessLabel}`, error);
+      await notifyVesperion("error", accessLabel);
+    }
+  }
+
   const activeProjectCount = projects.filter(
     (project) => project.status === "active",
   ).length;
@@ -490,10 +646,12 @@ function App() {
               <ul>
                 {globalAccesses.map((access) => (
                   <li key={access.label}>
-                    <button type="button" disabled>
+                    <button
+                      type="button"
+                      onClick={() => openGlobalAccess(access.label)}
+                    >
                       <span aria-hidden="true">{access.icon}</span>
                       <span>{access.label}</span>
-                      <small>Bientôt</small>
                     </button>
                   </li>
                 ))}
@@ -593,6 +751,7 @@ function App() {
                   key={project.name}
                   name={project.name}
                   icon={project.icon}
+                  iconTone={project.iconTone}
                   status={project.status}
                   isActive={project.name === activeProject?.name}
                   onClick={() => selectProject(project.name)}
@@ -627,9 +786,18 @@ function App() {
               type={activeProject.type}
               status={activeProject.status}
               locationLabel={activeProject.locationLabel}
-              lastSession={activeProject.lastSession}
+              lastSession={
+                sessionPreviewState === "loading"
+                  ? "Chargement..."
+                  : latestSessionDate ?? activeProject.lastSession
+              }
               summary={activeProject.summary}
-              sessionEnd={activeProject.sessionEnd}
+              sessionEnd={
+                sessionPreviewState === "loading"
+                  ? "Chargement de la dernière fin de session..."
+                  : latestSessionMarkdown ??
+                    "Aucune fin de session lisible trouvée pour ce projet."
+              }
               contextCopyState={contextCopyState}
               sessionCopyState={sessionCopyState}
               onOpenVsCode={openProjectInVsCode}

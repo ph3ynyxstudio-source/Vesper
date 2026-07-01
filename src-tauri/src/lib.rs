@@ -10,6 +10,7 @@ const VSCODE_LUNAR_PATH: &str = r"C:\Ph3yNyx.OS\Devs\Lun4rMood";
 const VSCODE_CHRONOS_PATH: &str = r"C:\Ph3yNyx.OS\Devs\Chr0nosV3rs";
 const VSCODE_ASTRAL_PATH: &str = r"C:\Ph3yNyx.OS\Devs\Astr4lDesign";
 const VSCODE_VESPER_PATH: &str = r"C:\Ph3yNyx.OS\Devs\Vesper";
+const VSCODE_PORTFOLIO_PATH: &str = r"C:\Ph3yNyx.OS\Devs\Ph3yNyx.Portfolio";
 const SESSION_VESPER_RAW_PATH: &str =
     r"C:\Users\pheyr\AppData\Roaming\com.ph3yn.chronosvers\projects\VespΣr\raw";
 const SESSION_LUNAR_RAW_PATH: &str =
@@ -18,6 +19,8 @@ const SESSION_CHRONOS_RAW_PATH: &str =
     r"C:\Users\pheyr\AppData\Roaming\com.ph3yn.chronosvers\projects\ChronoVers\raw";
 const SESSION_ASTRAL_RAW_PATH: &str =
     r"C:\Users\pheyr\AppData\Roaming\com.ph3yn.chronosvers\projects\Astr4lForge\raw";
+const SESSION_PORTFOLIO_RAW_PATH: &str =
+    r"C:\Users\pheyr\AppData\Roaming\com.ph3yn.chronosvers\projects\Ph3yNyx\raw";
 const GLOBAL_OBSIDIAN_SHORTCUT_PATH: &str =
     r"C:\Users\pheyr\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Obsidian.lnk";
 const GLOBAL_VSCODE_SHORTCUT_PATH: &str =
@@ -72,6 +75,8 @@ fn vscode_project_path(project_name: &str) -> Option<&'static str> {
         Some(VSCODE_ASTRAL_PATH)
     } else if normalized_name.contains("vesp") {
         Some(VSCODE_VESPER_PATH)
+    } else if normalized_name.contains("portfolio") || normalized_name.contains("ph3ynyx") {
+        Some(VSCODE_PORTFOLIO_PATH)
     } else {
         None
     }
@@ -100,6 +105,8 @@ fn chronosvers_raw_path(project_name: &str) -> Option<&'static str> {
         Some(SESSION_ASTRAL_RAW_PATH)
     } else if normalized_name.contains("vesp") {
         Some(SESSION_VESPER_RAW_PATH)
+    } else if normalized_name.contains("portfolio") || normalized_name.contains("ph3ynyx") {
+        Some(SESSION_PORTFOLIO_RAW_PATH)
     } else {
         None
     }
@@ -178,6 +185,8 @@ fn mapped_official_context_path(project_path: &std::path::Path) -> Option<std::p
         Some("Astr4l Ecosystem - CONTEXTE OFFICIEL.md")
     } else if project_name.contains("vesp") {
         Some("⭐VESPΣR — CONTEXTE OFFICIEL.md")
+    } else if project_name.contains("portfolio") || project_name.contains("ph3ynyx") {
+        Some("🪟Ph3yNyx.Portfolio — CONTEXTE OFFICIEL.md")
     } else {
         None
     }?;

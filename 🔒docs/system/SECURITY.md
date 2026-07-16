@@ -53,6 +53,10 @@ un projet existant, uniquement après une action et une confirmation explicites
 de l'utilisateur. Le backend doit valider que le projet appartient à la racine
 autorisée et refuser toute cible déjà existante avant la première création.
 
+VespΣr peut aussi écrire les champs `status` et `icon` dans `vesper.json` après
+une action explicite. L'identifiant d'icône doit être validé côté backend et
+aucun autre champ ne doit être supprimé.
+
 ---
 
 Limitation des chemins

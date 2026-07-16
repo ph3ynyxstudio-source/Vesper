@@ -47,6 +47,7 @@ const TRAY_REFRESH_APP_EVENT: &str = "tray-refresh-app";
 struct ProjectDirectory {
     name: String,
     path: String,
+    icon: Option<String>,
     modified_at_epoch_seconds: Option<u64>,
     status: String,
 }
@@ -67,6 +68,14 @@ struct SessionSnapshot {
 
 fn is_valid_project_status(status: &str) -> bool {
     matches!(status, "active" | "paused" | "concept" | "archived")
+}
+
+fn is_valid_project_icon_id(icon_id: &str) -> bool {
+    !icon_id.is_empty()
+        && icon_id.len() <= 64
+        && icon_id
+            .bytes()
+            .all(|value| value.is_ascii_lowercase() || value.is_ascii_digit() || value == b'-')
 }
 
 fn project_structure_directory_names(project_name: &str) -> [String; 4] {
@@ -321,6 +330,16 @@ fn read_project_status(project_path: &std::path::Path) -> String {
     }
 }
 
+fn read_project_icon(project_path: &std::path::Path) -> Option<String> {
+    let metadata = std::fs::read_to_string(project_path.join("vesper.json")).ok()?;
+    let value = serde_json::from_str::<serde_json::Value>(&metadata).ok()?;
+
+    value
+        .get("icon")
+        .and_then(serde_json::Value::as_str)
+        .map(str::to_owned)
+}
+
 #[tauri::command]
 fn list_project_directories() -> Result<Vec<ProjectDirectory>, String> {
     let root = std::path::Path::new(PROJECTS_ROOT);
@@ -350,6 +369,7 @@ fn list_project_directories() -> Result<Vec<ProjectDirectory>, String> {
         projects.push(ProjectDirectory {
             name: entry.file_name().to_string_lossy().into_owned(),
             path: path.to_string_lossy().into_owned(),
+            icon: read_project_icon(&path),
             modified_at_epoch_seconds,
             status: read_project_status(&path),
         });
@@ -646,6 +666,28 @@ fn update_project_status(project_path: &str, status: &str) -> Result<(), &'stati
 }
 
 #[tauri::command]
+fn update_project_icon(project_path: &str, icon_id: &str) -> Result<(), &'static str> {
+    if !is_valid_project_icon_id(icon_id) {
+        return Err("invalid_icon_id");
+    }
+
+    let project_path = canonical_project_path(project_path)?;
+    let metadata_path = project_path.join("vesper.json");
+    let mut metadata = std::fs::read_to_string(&metadata_path)
+        .ok()
+        .and_then(|value| serde_json::from_str::<serde_json::Value>(&value).ok())
+        .and_then(|value| value.as_object().cloned())
+        .unwrap_or_default();
+
+    metadata.insert("icon".into(), serde_json::Value::String(icon_id.into()));
+
+    let metadata = serde_json::to_string_pretty(&serde_json::Value::Object(metadata))
+        .map_err(|_| "serialize_failed")?;
+
+    std::fs::write(metadata_path, metadata).map_err(|_| "write_failed")
+}
+
+#[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
@@ -777,6 +819,7 @@ pub fn run() {
             list_project_genealogy,
             create_project_structure,
             update_project_status,
+            update_project_icon,
             open_project_directory,
             open_project_vscode,
             open_project_github,
@@ -796,7 +839,8 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::{
-        matching_branch_dir, project_structure_directory_names, session_date_from_file_name,
+        is_valid_project_icon_id, matching_branch_dir, project_structure_directory_names,
+        session_date_from_file_name,
     };
     use std::path::Path;
 
@@ -842,6 +886,15 @@ mod tests {
                 "99_⏳ Chr0nos_Archive",
             ]
         );
+    }
+
+    #[test]
+    fn validates_project_icon_identifiers() {
+        assert!(is_valid_project_icon_id("crystal-ball"));
+        assert!(is_valid_project_icon_id("robot2"));
+        assert!(!is_valid_project_icon_id(""));
+        assert!(!is_valid_project_icon_id("Crystal Ball"));
+        assert!(!is_valid_project_icon_id("../robot"));
     }
 
     #[test]

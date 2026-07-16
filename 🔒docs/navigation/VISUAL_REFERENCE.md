@@ -174,3 +174,40 @@ Impact :
 
 Compacte la partie supérieure du panneau sans modifier les actions ni le
 contenu Markdown.
+
+---
+
+Zone de fin de session
+
+Description :
+
+La carte de session utilise l'espace vertical restant du panneau. Le contenu
+Markdown conserve son défilement avec des barres sombres adaptées au thème.
+
+Fichier :
+
+src/components/ContextPanel/ContextPanel.css
+
+Impact :
+
+Allonge l'aperçu de session et remplace l'apparence blanche des barres de
+défilement natives.
+
+---
+
+Sélecteur d'icônes projet
+
+Description :
+
+Un clic sur la petite case d'icône d'une carte ouvre une bibliothèque locale
+de 34 SVG. Le choix conserve la couleur néon de la carte.
+
+Fichiers :
+
+src/components/ProjectIconPicker/ProjectIconPicker.tsx
+src/components/ProjectCard/ProjectCard.tsx
+
+Impact :
+
+Permet de personnaliser visuellement une carte sans ajouter de dépendance ni
+charger la bibliothèque SVG externe au démarrage.

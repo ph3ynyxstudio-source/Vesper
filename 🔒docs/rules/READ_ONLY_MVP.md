@@ -48,6 +48,9 @@ Exception explicite :
 - refuser l'opération si un sous-dossier cible existe déjà ;
 - ne créer ni projet, ni document, ni fichier de métadonnées dans ce flux.
 
+VespΣr peut également enregistrer dans `vesper.json`, après une action
+explicite, le statut ou l'identifiant d'icône choisi pour un projet.
+
 ---
 
 Interdit dans le MVP

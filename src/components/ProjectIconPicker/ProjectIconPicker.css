@@ -1,0 +1,117 @@
+.project-icon-picker-backdrop {
+  position: fixed;
+  z-index: 220;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(1, 5, 15, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+.project-icon-picker {
+  display: grid;
+  gap: 14px;
+  width: min(620px, 92vw);
+  max-height: min(610px, 88vh);
+  padding: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(80, 210, 255, 0.4);
+  border-radius: 18px;
+  color: var(--text-primary);
+  background:
+    radial-gradient(circle at 80% 0%, rgba(168, 85, 247, 0.14), transparent 35%),
+    rgba(5, 14, 30, 0.98);
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.55);
+}
+
+.project-icon-picker header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.project-icon-picker header span,
+.project-icon-picker > small {
+  color: var(--text-muted);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.project-icon-picker h2 {
+  margin: 3px 0 0;
+  font-size: 18px;
+}
+
+.project-icon-picker header > button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(80, 210, 255, 0.32);
+  border-radius: 9px;
+  color: var(--accent-blue);
+  background: rgba(80, 210, 255, 0.08);
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.project-icon-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  min-height: 0;
+  padding-right: 3px;
+  overflow: auto;
+  scrollbar-color: rgba(125, 151, 184, 0.65) rgba(5, 12, 27, 0.7);
+  scrollbar-width: thin;
+}
+
+.project-icon-picker-grid > button {
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  min-height: 70px;
+  padding: 8px 5px;
+  overflow: hidden;
+  border: 1px solid rgba(80, 210, 255, 0.18);
+  border-radius: 10px;
+  color: var(--accent-blue);
+  background: rgba(80, 210, 255, 0.04);
+  cursor: pointer;
+}
+
+.project-icon-picker-grid > button:hover,
+.project-icon-picker-grid > button:focus-visible,
+.project-icon-picker-grid > button.selected {
+  border-color: rgba(224, 87, 255, 0.72);
+  color: #ff68f0;
+  background: rgba(224, 87, 255, 0.1);
+  outline: none;
+}
+
+.project-icon-picker-grid .project-library-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.project-icon-picker-grid > button > span:last-child {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-icon-picker > p {
+  margin: 0;
+  color: #fca5a5;
+  font-size: 11px;
+}
+
+@media (max-width: 620px) {
+  .project-icon-picker-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

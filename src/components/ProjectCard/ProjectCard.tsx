@@ -11,6 +11,7 @@ type ProjectCardProps = {
   status: ProjectStatus;
   isActive?: boolean;
   onClick?: () => void;
+  onIconClick?: () => void;
   onStatusChange?: (status: ProjectStatus) => void;
 };
 
@@ -43,6 +44,7 @@ export function ProjectCard({
   status,
   isActive = false,
   onClick,
+  onIconClick,
   onStatusChange,
 }: ProjectCardProps) {
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
@@ -139,20 +141,29 @@ export function ProjectCard({
     <div
       className={`project-card ${isActive ? "active" : ""}`}
     >
-      <button
-        className="project-card-main"
-        type="button"
-        onClick={onClick}
-        aria-pressed={isActive}
-      >
-        <div className={`project-card-icon tone-${iconTone}`} aria-hidden="true">
+      <div className="project-card-main-row">
+        <button
+          className={`project-card-icon tone-${iconTone}`}
+          type="button"
+          onClick={onIconClick}
+          disabled={!onIconClick}
+          aria-label={`Choisir l’icône de ${name}`}
+          title="Choisir une icône"
+        >
           {icon}
-        </div>
+        </button>
 
-        <div className="project-card-title-group">
-          <h3>{name}</h3>
-        </div>
-      </button>
+        <button
+          className="project-card-main"
+          type="button"
+          onClick={onClick}
+          aria-pressed={isActive}
+        >
+          <div className="project-card-title-group">
+            <h3>{name}</h3>
+          </div>
+        </button>
+      </div>
 
       <div className="project-card-status-control">
         <button

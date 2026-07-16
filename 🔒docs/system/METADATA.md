@@ -64,10 +64,11 @@ Nom affiché dans l'interface.
 
 icon
 
-Icône affichée dans les cartes et vues projet.
+Identifiant d'une icône affichée dans les cartes et vues projet. La valeur est
+choisie dans la bibliothèque SVG intégrée à VespΣr.
 
 {
-  "icon": "✧"
+  "icon": "crystal-ball"
 }
 
 ---
@@ -161,12 +162,13 @@ VespΣr peut :
 - lire "vesper.json"
 - interpréter ses valeurs
 - afficher les informations
+- mettre à jour `status` et `icon` après une action explicite de l'utilisateur
+- créer "vesper.json" si cette action l'exige et si le fichier est absent
 
 VespΣr ne doit pas :
 
-- créer "vesper.json"
-- modifier "vesper.json"
 - supprimer "vesper.json"
+- modifier silencieusement les autres champs
 
 ---
 

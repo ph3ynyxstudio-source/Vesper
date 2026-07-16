@@ -16,6 +16,9 @@ import {
   PaintbrushIcon,
   VesperionIcon as ProjectVesperionIcon,
 } from "./components/ProjectCard/ProjectIcons";
+import { ProjectIconPicker } from "./components/ProjectIconPicker/ProjectIconPicker";
+import { ProjectLibraryIcon } from "./components/ProjectIconPicker/ProjectLibraryIcon";
+import { isProjectIconId } from "./components/ProjectIconPicker/project-icons";
 import {
   ProjectTree,
   type ProjectGenealogyBranch,
@@ -38,6 +41,7 @@ type CompanionSettings = {
 type ProjectDirectory = {
   name: string;
   path: string;
+  icon?: string;
   modified_at_epoch_seconds?: number;
   status: ProjectStatus;
 };
@@ -56,6 +60,7 @@ type SessionSnapshot = {
 
 type LocalProject = {
   name: string;
+  iconId?: string;
   icon: ReactNode;
   iconTone: "gold" | "purple" | "magenta" | "blue" | "default";
   type: string;
@@ -176,7 +181,14 @@ async function destroyCompanionWindow() {
   }
 }
 
-function getProjectIcon(name: string) {
+function getProjectIcon(name: string, iconId?: string) {
+  if (isProjectIconId(iconId)) {
+    return {
+      icon: <ProjectLibraryIcon iconId={iconId} />,
+      iconTone: "blue" as const,
+    };
+  }
+
   const normalizedName = name.toLowerCase();
 
   if (normalizedName.includes("hr0nos") || normalizedName.includes("chr0nos")) {
@@ -215,10 +227,11 @@ function getProjectIcon(name: string) {
 
 function toLocalProject(directory: ProjectDirectory): LocalProject {
   const lastSession = formatModifiedDate(directory.modified_at_epoch_seconds);
-  const projectIcon = getProjectIcon(directory.name);
+  const projectIcon = getProjectIcon(directory.name, directory.icon);
 
   return {
     name: directory.name,
+    iconId: isProjectIconId(directory.icon) ? directory.icon : undefined,
     icon: projectIcon.icon,
     iconTone: projectIcon.iconTone,
     type: "Dossier local",
@@ -246,6 +259,8 @@ function App() {
   const [structureGenerationRevision, setStructureGenerationRevision] = useState(0);
   const [structureGenerationState, setStructureGenerationState] =
     useState<StructureGenerationState>({ status: "idle" });
+  const [iconPickerProjectName, setIconPickerProjectName] = useState<string>();
+  const [iconPickerError, setIconPickerError] = useState<string>();
   const [officialContextContent, setOfficialContextContent] = useState<string>();
   const [latestSessionMarkdown, setLatestSessionMarkdown] = useState<string>();
   const [latestSessionDate, setLatestSessionDate] = useState<string>();
@@ -270,6 +285,9 @@ function App() {
   const selectedSessionDirectory = activeProject
     ? sessionFolderSelections[activeProject.locationLabel]
     : undefined;
+  const iconPickerProject = projects.find(
+    (project) => project.name === iconPickerProjectName,
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -688,6 +706,45 @@ function App() {
     }
   }
 
+  function openProjectIconPicker(projectName: string) {
+    selectProject(projectName);
+    setIconPickerProjectName(projectName);
+    setIconPickerError(undefined);
+  }
+
+  async function updateProjectIcon(iconId: string) {
+    const project = projects.find((value) => value.name === iconPickerProjectName);
+    if (!project) return;
+
+    try {
+      await invoke("update_project_icon", {
+        projectPath: project.locationLabel,
+        iconId,
+      });
+      const nextIcon = getProjectIcon(project.name, iconId);
+
+      setProjects((currentProjects) =>
+        currentProjects.map((currentProject) =>
+          currentProject.name === project.name
+            ? {
+                ...currentProject,
+                iconId,
+                icon: nextIcon.icon,
+                iconTone: nextIcon.iconTone,
+              }
+            : currentProject,
+        ),
+      );
+      setIconPickerProjectName(undefined);
+      setIconPickerError(undefined);
+      await notifyVesperion("success", "Icône");
+    } catch (error: unknown) {
+      console.error("Unable to update the project icon", error);
+      setIconPickerError("Impossible d’enregistrer cette icône dans vesper.json.");
+      await notifyVesperion("error", "Icône");
+    }
+  }
+
   async function notifyVesperion(
     status: "success" | "error",
     accessLabel: string,
@@ -943,6 +1000,7 @@ function App() {
                   status={project.status}
                   isActive={project.name === activeProject?.name}
                   onClick={() => selectProject(project.name)}
+                  onIconClick={() => openProjectIconPicker(project.name)}
                   onStatusChange={(status) =>
                     updateProjectStatus(project.name, status)
                   }
@@ -1002,6 +1060,18 @@ function App() {
           ) : null
         }
       />
+      {iconPickerProject ? (
+        <ProjectIconPicker
+          projectName={iconPickerProject.name}
+          selectedIconId={iconPickerProject.iconId}
+          error={iconPickerError}
+          onClose={() => {
+            setIconPickerProjectName(undefined);
+            setIconPickerError(undefined);
+          }}
+          onSelect={updateProjectIcon}
+        />
+      ) : null}
     </main>
   );
 }

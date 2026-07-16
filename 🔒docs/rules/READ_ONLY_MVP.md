@@ -12,7 +12,7 @@ Son rôle est de permettre à l'utilisateur de retrouver rapidement :
 - leurs ressources ;
 - leurs dernières sessions.
 
-Le MVP v0.1 est principalement en lecture seule.
+La version 1.0 est principalement en lecture seule.
 
 ---
 
@@ -40,6 +40,13 @@ VespΣr peut :
 - ouvrir un terminal ;
 - ouvrir un repository Git ;
 - ouvrir des URLs externes.
+
+Exception explicite :
+
+- initialiser, à la demande de l'utilisateur et après confirmation, les quatre
+  sous-dossiers normalisés d'un projet déjà créé manuellement ;
+- refuser l'opération si un sous-dossier cible existe déjà ;
+- ne créer ni projet, ni document, ni fichier de métadonnées dans ce flux.
 
 ---
 

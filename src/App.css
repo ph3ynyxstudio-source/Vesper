@@ -184,6 +184,33 @@ button {
   background: rgba(80, 210, 255, 0.12);
 }
 
+.project-manager-trigger:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.structure-generation-message {
+  margin: -5px 0 10px;
+  padding: 8px 10px;
+  border: 1px solid rgba(80, 210, 255, 0.32);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  background: rgba(80, 210, 255, 0.06);
+  font-size: 12px;
+}
+
+.structure-generation-message.success {
+  border-color: rgba(74, 222, 128, 0.35);
+  color: #86efac;
+  background: rgba(74, 222, 128, 0.07);
+}
+
+.structure-generation-message.error {
+  border-color: rgba(248, 113, 113, 0.4);
+  color: #fca5a5;
+  background: rgba(248, 113, 113, 0.07);
+}
+
 .companion-settings-panel,
 .project-manager-panel {
   position: absolute;

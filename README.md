@@ -35,9 +35,9 @@ Les projets existent parce qu'ils existent sur le disque.
 
 VespΣr observe cette structure et la rend plus facile à explorer.
 
-Read Only MVP
+Read Only V1
 
-Le MVP v0.1 est principalement en lecture seule.
+La version 1.0 reste principalement en lecture seule.
 
 VespΣr peut :
 
@@ -81,9 +81,9 @@ lit et navigue le contexte
 
 ---
 
-MVP v0.1
+V1 officielle
 
-Le MVP se concentre sur un seul objectif :
+La V1 se concentre sur un objectif principal :
 
 retrouver rapidement le contexte d'un projet.
 
@@ -95,11 +95,15 @@ Inclus
 - affichage du contexte ;
 - affichage des dernières sessions ;
 - navigation entre projets ;
+- génération confirmée de la structure normalisée d'un projet existant ;
+- sélection locale de la source des sessions chr0 ;
 - ouverture rapide :
   - VS Code ;
   - Explorateur ;
   - GitHub ;
-  - Terminal.
+  - Terminal ;
+  - chr0 ;
+  - Plum3.
 
 Exclus
 
@@ -173,11 +177,11 @@ Stack
 
 Version :
 
-v0.1
+v1.0.0
 
 Statut :
 
-Prototype MVP
+Version officielle
 
 ---
 

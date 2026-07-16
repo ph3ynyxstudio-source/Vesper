@@ -46,6 +46,13 @@ VespΣr ne doit pas :
 - renommer des fichiers ;
 - déplacer des fichiers.
 
+Exception limitée :
+
+VespΣr peut créer les sous-dossiers normalisés `01`, `02`, `05` et `99` dans
+un projet existant, uniquement après une action et une confirmation explicites
+de l'utilisateur. Le backend doit valider que le projet appartient à la racine
+autorisée et refuser toute cible déjà existante avant la première création.
+
 ---
 
 Limitation des chemins
@@ -79,6 +86,16 @@ VespΣr peut ouvrir :
 - URLs externes.
 
 Ces actions doivent être déclenchées explicitement par l'utilisateur.
+
+Les boutons applicatifs peuvent ouvrir uniquement les destinations locales
+explicitement validées pour Chr0nosV3rs et Plum3. Aucun exécutable alternatif
+ou chemin de développement ne doit être utilisé comme fallback silencieux.
+
+Sélection des sessions Chr0nosV3rs
+
+Le sélecteur peut démarrer dans la racine locale de Chr0nosV3rs. Le backend
+n'accepte comme source qu'un dossier projet directement enfant de cette racine.
+Une source sélectionnée invalide ne doit déclencher aucun fallback silencieux.
 
 ---
 

@@ -101,3 +101,76 @@ src/components/ContextProjectCard/ContextProjectCard.tsx#L1
 Impact :
 
 Toute modification affecte l'affichage des projets.
+
+---
+
+Génération de la structure projet
+
+Description :
+
+Bouton appliquant les dossiers normalisés au projet sélectionné et affichant
+le résultat de l'opération.
+
+Fichiers :
+
+src/App.tsx
+src/App.css
+
+Impact :
+
+Modifie les actions disponibles dans l'en-tête de la liste des projets.
+
+---
+
+Sélection de la source Chr0nosV3rs
+
+Description :
+
+Bouton du panneau « Fin de session » permettant d'associer un dossier projet
+Chr0nosV3rs au projet VespΣr affiché.
+
+Fichiers :
+
+src/components/ContextPanel/ContextPanel.tsx
+src/components/ContextPanel/ContextPanel.css
+
+Impact :
+
+Modifie la source Markdown affichée et copiable dans le panneau de session.
+
+---
+
+Lancement de Chr0 et Plum3
+
+Description :
+
+Bouton Chr0 placé dans l'en-tête « Fin de session » et bouton Plum3 placé en
+bas à droite de la carte d'arbre généalogique.
+
+Fichiers :
+
+src/components/ContextPanel/ContextPanel.tsx
+src/components/ProjectTree/ProjectTree.tsx
+
+Impact :
+
+Ajoute deux raccourcis visuels vers les applications locales associées.
+
+---
+
+Densité du panneau contexte
+
+Description :
+
+Le chemin du projet et la date de dernière session partagent une rangée afin
+de réduire la hauteur du bloc de métadonnées.
+
+Fichiers :
+
+src/components/ContextPanel/ContextPanel.tsx
+src/components/ContextPanel/ContextPanel.css
+
+Impact :
+
+Compacte la partie supérieure du panneau sans modifier les actions ni le
+contenu Markdown.

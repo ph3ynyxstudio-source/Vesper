@@ -21,10 +21,15 @@ const SESSION_ASTRAL_RAW_PATH: &str =
     r"C:\Users\pheyr\AppData\Roaming\com.ph3yn.chronosvers\projects\Astr4lForge\raw";
 const SESSION_PORTFOLIO_RAW_PATH: &str =
     r"C:\Users\pheyr\AppData\Roaming\com.ph3yn.chronosvers\projects\Ph3yNyx\raw";
+const CHRONOS_PROJECTS_ROOT: &str =
+    r"C:\Users\pheyr\AppData\Roaming\com.ph3yn.chronosvers\projects";
 const GLOBAL_OBSIDIAN_SHORTCUT_PATH: &str =
     r"C:\Users\pheyr\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Obsidian.lnk";
 const GLOBAL_VSCODE_SHORTCUT_PATH: &str =
     r"C:\Users\pheyr\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Visual Studio Code.lnk";
+const CHRONOS_SHORTCUT_PATH: &str =
+    r"C:\Users\pheyr\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\chronosvers.lnk";
+const PLUM3_EXE_PATH: &str = r"C:\Program Files\Plum3\plum3-de-nyx.exe";
 const GLOBAL_EXPLORER_PATH: &str = r"C:\Ph3yNyx.OS";
 const GLOBAL_GITHUB_URL: &str = "https://github.com/ph3ynyxstudio-source";
 const GLOBAL_TERMINAL_PATH: &str = r"C:\Ph3yNyx.OS";
@@ -62,6 +67,15 @@ struct SessionSnapshot {
 
 fn is_valid_project_status(status: &str) -> bool {
     matches!(status, "active" | "paused" | "concept" | "archived")
+}
+
+fn project_structure_directory_names(project_name: &str) -> [String; 4] {
+    [
+        format!("01_⏳ {project_name}_Assets"),
+        format!("02_⏳ {project_name}_Docs"),
+        format!("05_⏳ {project_name}_FEATURES"),
+        format!("99_⏳ {project_name}_Archive"),
+    ]
 }
 
 fn vscode_project_path(project_name: &str) -> Option<&'static str> {
@@ -110,6 +124,21 @@ fn chronosvers_raw_path(project_name: &str) -> Option<&'static str> {
     } else {
         None
     }
+}
+
+fn canonical_chronos_project_path(path: &str) -> Result<std::path::PathBuf, &'static str> {
+    let requested_path = std::path::Path::new(path)
+        .canonicalize()
+        .map_err(|_| "invalid_session_source")?;
+    let root = std::path::Path::new(CHRONOS_PROJECTS_ROOT)
+        .canonicalize()
+        .map_err(|_| "invalid_session_root")?;
+
+    if requested_path.parent() != Some(root.as_path()) || !requested_path.is_dir() {
+        return Err("session_source_outside_root");
+    }
+
+    Ok(requested_path)
 }
 
 fn github_shortcut_path(project_path: &std::path::Path) -> Result<std::path::PathBuf, &'static str> {
@@ -398,6 +427,34 @@ fn read_latest_project_session_snapshot(project_name: &str) -> Result<SessionSna
 }
 
 #[tauri::command]
+fn validate_chronos_project_directory(path: &str) -> Result<String, &'static str> {
+    canonical_chronos_project_path(path)
+        .map(|path| path.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+fn read_latest_session_snapshot_from_directory(
+    project_directory: &str,
+) -> Result<SessionSnapshot, &'static str> {
+    let project_directory = canonical_chronos_project_path(project_directory)?;
+    let raw_path = project_directory.join("raw");
+
+    if !raw_path.is_dir() {
+        return Err("raw_directory_missing");
+    }
+
+    let latest_file_path = latest_file_in_directory(&raw_path)?;
+    let content = std::fs::read_to_string(&latest_file_path).map_err(|_| "read_failed")?;
+    let display_date =
+        session_date_from_file_name(&latest_file_path).unwrap_or_else(|| "Non disponible".into());
+
+    Ok(SessionSnapshot {
+        content,
+        display_date,
+    })
+}
+
+#[tauri::command]
 fn open_global_access(app: tauri::AppHandle, access_label: &str) -> Result<(), &'static str> {
     match access_label {
         "Obsidian" => app
@@ -423,6 +480,30 @@ fn open_global_access(app: tauri::AppHandle, access_label: &str) -> Result<(), &
             .map_err(|_| "open_failed"),
         _ => Err("unknown_access"),
     }
+}
+
+#[tauri::command]
+fn open_chronos_app(app: tauri::AppHandle) -> Result<(), &'static str> {
+    let shortcut_path = std::path::Path::new(CHRONOS_SHORTCUT_PATH);
+    if !shortcut_path.is_file() {
+        return Err("chronos_shortcut_missing");
+    }
+
+    app.opener()
+        .open_path(CHRONOS_SHORTCUT_PATH, None::<&str>)
+        .map_err(|_| "open_failed")
+}
+
+#[tauri::command]
+fn open_plum3_app(app: tauri::AppHandle) -> Result<(), &'static str> {
+    let executable_path = std::path::Path::new(PLUM3_EXE_PATH);
+    if !executable_path.is_file() {
+        return Err("plum3_executable_missing");
+    }
+
+    app.opener()
+        .open_path(PLUM3_EXE_PATH, None::<&str>)
+        .map_err(|_| "open_failed")
 }
 
 fn canonical_project_path(path: &str) -> Result<std::path::PathBuf, &'static str> {
@@ -516,6 +597,30 @@ fn list_project_genealogy(project_path: &str) -> Result<Vec<ProjectBranch>, &'st
             }
         })
         .collect())
+}
+
+#[tauri::command]
+fn create_project_structure(project_path: &str) -> Result<Vec<String>, String> {
+    let project_path = canonical_project_path(project_path).map_err(str::to_owned)?;
+    let project_name = project_path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .filter(|name| !name.trim().is_empty())
+        .ok_or_else(|| "invalid_project_name".to_owned())?;
+    let directory_names = project_structure_directory_names(project_name);
+
+    for directory_name in &directory_names {
+        if project_path.join(directory_name).exists() {
+            return Err(format!("target_exists:{directory_name}"));
+        }
+    }
+
+    for directory_name in &directory_names {
+        std::fs::create_dir(project_path.join(directory_name))
+            .map_err(|error| format!("create_failed:{directory_name}:{error}"))?;
+    }
+
+    Ok(directory_names.into_iter().collect())
 }
 
 #[tauri::command]
@@ -664,19 +769,25 @@ pub fn run() {
             }
         })
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             greet,
             drag_vesperion,
             list_project_directories,
             list_project_genealogy,
+            create_project_structure,
             update_project_status,
             open_project_directory,
             open_project_vscode,
             open_project_github,
             open_global_access,
+            open_chronos_app,
+            open_plum3_app,
             read_project_official_context,
             read_latest_project_session_markdown,
             read_latest_project_session_snapshot,
+            validate_chronos_project_directory,
+            read_latest_session_snapshot_from_directory,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -684,7 +795,9 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::{matching_branch_dir, session_date_from_file_name};
+    use super::{
+        matching_branch_dir, project_structure_directory_names, session_date_from_file_name,
+    };
     use std::path::Path;
 
     fn names(values: &[&str]) -> Vec<String> {
@@ -715,6 +828,19 @@ mod tests {
         assert_eq!(
             matching_branch_dir("archives", "Archives", &directories),
             Some("99_🌙Lun△rMood_Archive".into())
+        );
+    }
+
+    #[test]
+    fn builds_the_normalized_project_structure_names() {
+        assert_eq!(
+            project_structure_directory_names("Chr0nos"),
+            [
+                "01_⏳ Chr0nos_Assets",
+                "02_⏳ Chr0nos_Docs",
+                "05_⏳ Chr0nos_FEATURES",
+                "99_⏳ Chr0nos_Archive",
+            ]
         );
     }
 

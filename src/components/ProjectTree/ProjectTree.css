@@ -247,6 +247,36 @@
   height: 32px;
 }
 
+.project-tree-plum3-launch {
+  position: absolute;
+  right: 18px;
+  bottom: 14px;
+  min-width: 84px;
+  padding: 8px 12px;
+  border: 1px solid rgba(80, 210, 255, 0.42);
+  border-radius: 6px;
+  color: var(--accent-blue);
+  background: rgba(80, 210, 255, 0.08);
+  box-shadow: none;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.project-tree-plum3-launch:hover:not(:disabled),
+.project-tree-plum3-launch:focus-visible {
+  border-color: rgba(80, 210, 255, 0.75);
+  background: rgba(80, 210, 255, 0.14);
+  box-shadow: 0 0 12px rgba(80, 210, 255, 0.16);
+  outline: none;
+}
+
+.project-tree-plum3-launch:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .tone-cyan {
   color: #50d2ff;
 }
@@ -333,11 +363,25 @@
     width: 26px;
     height: 26px;
   }
+
+  .project-tree-plum3-launch {
+    right: 6px;
+    bottom: 4px;
+    min-width: 76px;
+    padding: 6px 9px;
+    font-size: 8px;
+  }
 }
 
 @media (max-width: 760px) {
   .project-genealogy-map {
     min-height: 0;
+  }
+
+  .project-tree-plum3-launch {
+    position: static;
+    justify-self: end;
+    margin-top: 12px;
   }
 
   .project-genealogy-lines {

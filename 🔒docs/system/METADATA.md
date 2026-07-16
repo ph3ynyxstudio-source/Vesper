@@ -154,7 +154,7 @@ Une erreur de métadonnées ne doit jamais empêcher l'affichage du projet.
 
 ---
 
-MVP v0.1
+Version 1.0
 
 VespΣr peut :
 

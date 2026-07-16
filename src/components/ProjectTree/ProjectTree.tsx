@@ -14,6 +14,7 @@ type ProjectTreeProps = {
   projectPath: string;
   branches: ProjectGenealogyBranch[];
   onOpenBranch?: (branch: ProjectGenealogyBranch) => void;
+  onOpenPlum3?: () => void;
 };
 
 const branchMeta: Record<
@@ -164,6 +165,7 @@ export function ProjectTree({
   projectPath,
   branches,
   onOpenBranch,
+  onOpenPlum3,
 }: ProjectTreeProps) {
   const orderedBranches: ProjectBranchId[] = [
     "docs",
@@ -244,6 +246,15 @@ export function ProjectTree({
             );
           })}
         </div>
+
+        <button
+          className="project-tree-plum3-launch"
+          type="button"
+          onClick={onOpenPlum3}
+          disabled={!onOpenPlum3}
+        >
+          Plum3
+        </button>
       </div>
     </section>
   );

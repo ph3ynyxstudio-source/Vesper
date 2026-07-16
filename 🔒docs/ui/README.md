@@ -1,4 +1,4 @@
-Cockpit MVP v0.1
+Cockpit V1.0 officielle
 
 Fichier :
 docs/ui/cockpit-mvp-reference.png

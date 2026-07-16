@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { emitTo, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { open } from "@tauri-apps/plugin-dialog";
 import { CockpitLayout } from "./components/CockpitLayout/CockpitLayout";
 import { ContextPanel } from "./components/ContextPanel/ContextPanel";
 import {
@@ -23,6 +24,11 @@ import vesperionIcon from "./assets/vesperion-icon-512.png";
 import "./App.css";
 
 type CopyState = "idle" | "copied" | "error";
+
+type StructureGenerationState = {
+  status: "idle" | "creating" | "success" | "error";
+  message?: string;
+};
 
 type CompanionSettings = {
   visible: boolean;
@@ -62,7 +68,10 @@ type LocalProject = {
 };
 
 const projectsRoot = "C:\\Ph3yNyx.OS\\05_⭐VESPΣR";
+const chronosProjectsRoot =
+  "C:\\Users\\pheyr\\AppData\\Roaming\\com.ph3yn.chronosvers\\projects";
 const companionSettingsStorageKey = "vesperion-companion-settings";
+const sessionFolderSelectionsStorageKey = "vesper-session-folder-selections";
 const companionWindowLabel = "vesperion";
 const trayToggleCompanionEvent = "tray-toggle-companion";
 const trayRefreshAppEvent = "tray-refresh-app";
@@ -92,6 +101,24 @@ function readCompanionSettings(): CompanionSettings {
     };
   } catch {
     return { visible: true, shadow: true };
+  }
+}
+
+function readSessionFolderSelections(): Record<string, string> {
+  try {
+    const storedSelections = localStorage.getItem(sessionFolderSelectionsStorageKey);
+    if (!storedSelections) return {};
+
+    const parsedSelections = JSON.parse(storedSelections) as unknown;
+    if (!parsedSelections || typeof parsedSelections !== "object") return {};
+
+    return Object.fromEntries(
+      Object.entries(parsedSelections).filter(
+        (entry): entry is [string, string] => typeof entry[1] === "string",
+      ),
+    );
+  } catch {
+    return {};
   }
 }
 
@@ -216,6 +243,9 @@ function App() {
   const [projectTreeState, setProjectTreeState] =
     useState<"loading" | "ready" | "error">("loading");
   const [isCompanionPanelOpen, setIsCompanionPanelOpen] = useState(false);
+  const [structureGenerationRevision, setStructureGenerationRevision] = useState(0);
+  const [structureGenerationState, setStructureGenerationState] =
+    useState<StructureGenerationState>({ status: "idle" });
   const [officialContextContent, setOfficialContextContent] = useState<string>();
   const [latestSessionMarkdown, setLatestSessionMarkdown] = useState<string>();
   const [latestSessionDate, setLatestSessionDate] = useState<string>();
@@ -224,12 +254,22 @@ function App() {
   >("loading");
   const [contextCopyState, setContextCopyState] = useState<CopyState>("idle");
   const [sessionCopyState, setSessionCopyState] = useState<CopyState>("idle");
+  const [sessionFolderSelections, setSessionFolderSelections] = useState(
+    readSessionFolderSelections,
+  );
+  const [sessionSourceState, setSessionSourceState] = useState<
+    "idle" | "selecting" | "error"
+  >("idle");
+  const [sessionSourceError, setSessionSourceError] = useState<string>();
   const activeProject = useMemo(
     () =>
       projects.find((project) => project.name === activeProjectName) ??
       projects[0],
     [activeProjectName, projects],
   );
+  const selectedSessionDirectory = activeProject
+    ? sessionFolderSelections[activeProject.locationLabel]
+    : undefined;
 
   useEffect(() => {
     let isMounted = true;
@@ -367,7 +407,7 @@ function App() {
     return () => {
       isMounted = false;
     };
-  }, [activeProject]);
+  }, [activeProject, structureGenerationRevision]);
 
   useEffect(() => {
     let isMounted = true;
@@ -403,12 +443,14 @@ function App() {
       setSessionPreviewState("loading");
 
       try {
-        const latestSession = await invoke<SessionSnapshot>(
-          "read_latest_project_session_snapshot",
-          {
-            projectName: activeProject.name,
-          },
-        );
+        const latestSession = selectedSessionDirectory
+          ? await invoke<SessionSnapshot>(
+              "read_latest_session_snapshot_from_directory",
+              { projectDirectory: selectedSessionDirectory },
+            )
+          : await invoke<SessionSnapshot>("read_latest_project_session_snapshot", {
+              projectName: activeProject.name,
+            });
 
         if (!isMounted) return;
         setLatestSessionMarkdown(latestSession.content);
@@ -420,6 +462,12 @@ function App() {
         setLatestSessionMarkdown(undefined);
         setLatestSessionDate(undefined);
         setSessionPreviewState("empty");
+        if (selectedSessionDirectory) {
+          setSessionSourceState("error");
+          setSessionSourceError(
+            "Le dossier Chr0 sélectionné est inaccessible ou ne contient aucune session lisible.",
+          );
+        }
       }
     }
 
@@ -429,7 +477,7 @@ function App() {
     return () => {
       isMounted = false;
     };
-  }, [activeProject]);
+  }, [activeProject, selectedSessionDirectory]);
 
   function fallbackCopyText(value: string) {
     const textarea = document.createElement("textarea");
@@ -493,13 +541,22 @@ function App() {
         return copyText(latestSessionMarkdown, setSessionCopyState);
       }
 
-      const latestSession = await invoke<SessionSnapshot>("read_latest_project_session_snapshot", {
-        projectName: activeProject.name,
-      });
+      const latestSession = selectedSessionDirectory
+        ? await invoke<SessionSnapshot>("read_latest_session_snapshot_from_directory", {
+            projectDirectory: selectedSessionDirectory,
+          })
+        : await invoke<SessionSnapshot>("read_latest_project_session_snapshot", {
+            projectName: activeProject.name,
+          });
 
       return copyText(latestSession.content, setSessionCopyState);
     } catch (error: unknown) {
       console.error("Unable to read the latest project session markdown", error);
+
+      if (selectedSessionDirectory) {
+        setSessionCopyState("error");
+        return;
+      }
 
       return copyText(
         `# Fin de session — ${activeProject.name}\n\n${activeProject.sessionEnd}`,
@@ -512,6 +569,93 @@ function App() {
     setActiveProjectName(projectName);
     setContextCopyState("idle");
     setSessionCopyState("idle");
+    setStructureGenerationState({ status: "idle" });
+    setSessionSourceState("idle");
+    setSessionSourceError(undefined);
+  }
+
+  async function selectChronosSessionDirectory() {
+    if (!activeProject || sessionSourceState === "selecting") return;
+
+    setSessionSourceState("selecting");
+
+    try {
+      const selectedPath = await open({
+        directory: true,
+        multiple: false,
+        defaultPath: chronosProjectsRoot,
+        title: `Choisir les sessions Chr0 pour ${activeProject.name}`,
+      });
+
+      if (!selectedPath) {
+        setSessionSourceState(sessionSourceError ? "error" : "idle");
+        return;
+      }
+
+      const validatedPath = await invoke<string>(
+        "validate_chronos_project_directory",
+        { path: selectedPath },
+      );
+      const nextSelections = {
+        ...sessionFolderSelections,
+        [activeProject.locationLabel]: validatedPath,
+      };
+
+      localStorage.setItem(
+        sessionFolderSelectionsStorageKey,
+        JSON.stringify(nextSelections),
+      );
+      setSessionFolderSelections(nextSelections);
+      setSessionSourceState("idle");
+      setSessionSourceError(undefined);
+      setSessionCopyState("idle");
+    } catch (error: unknown) {
+      console.error("Unable to select the Chr0 session directory", error);
+      setSessionSourceState("error");
+      setSessionSourceError(
+        "Sélection refusée : choisissez un dossier projet directement dans le dossier Chr0nosV3rs.",
+      );
+    }
+  }
+
+  async function createActiveProjectStructure() {
+    if (!activeProject || structureGenerationState.status === "creating") return;
+
+    const confirmed = window.confirm(
+      `Créer les dossiers 01, 02, 05 et 99 dans :\n${activeProject.locationLabel}\n\nAucun dossier existant ne sera remplacé.`,
+    );
+    if (!confirmed) return;
+
+    setStructureGenerationState({
+      status: "creating",
+      message: "Création de la structure...",
+    });
+
+    try {
+      await invoke<string[]>("create_project_structure", {
+        projectPath: activeProject.locationLabel,
+      });
+      setStructureGenerationRevision((revision) => revision + 1);
+      setStructureGenerationState({
+        status: "success",
+        message: `Structure créée pour ${activeProject.name}.`,
+      });
+      await notifyVesperion("success", "Structure");
+    } catch (error: unknown) {
+      const details = String(error);
+      const existingTarget = details.startsWith("target_exists:")
+        ? details.slice("target_exists:".length)
+        : undefined;
+
+      console.error("Unable to create the project structure", error);
+      setStructureGenerationState({
+        status: "error",
+        message: existingTarget
+          ? `Création annulée : ${existingTarget} existe déjà.`
+          : "Impossible de créer la structure dans ce projet.",
+      });
+      await notifyVesperion("error", "Structure");
+    }
   }
 
   function updateCompanionSetting<Key extends keyof CompanionSettings>(
@@ -610,6 +754,28 @@ function App() {
     }
   }
 
+  async function openChronosApp() {
+    try {
+      await invoke("open_chronos_app");
+      await notifyVesperion("success", "Chr0");
+    } catch (error: unknown) {
+      console.error("Unable to open Chr0", error);
+      setSessionSourceState("error");
+      setSessionSourceError("Impossible d’ouvrir l’application Chr0.");
+      await notifyVesperion("error", "Chr0");
+    }
+  }
+
+  async function openPlum3App() {
+    try {
+      await invoke("open_plum3_app");
+      await notifyVesperion("success", "Plum3");
+    } catch (error: unknown) {
+      console.error("Unable to open Plum3", error);
+      await notifyVesperion("error", "Plum3");
+    }
+  }
+
   const activeProjectCount = projects.filter(
     (project) => project.status === "active",
   ).length;
@@ -682,6 +848,19 @@ function App() {
                 <h2 id="projects-title">Projets</h2>
               </div>
               <div className="project-heading-actions">
+                <button
+                  className="project-manager-trigger"
+                  type="button"
+                  disabled={
+                    !activeProject || structureGenerationState.status === "creating"
+                  }
+                  onClick={createActiveProjectStructure}
+                >
+                  {structureGenerationState.status === "creating"
+                    ? "Création..."
+                    : "Générer 01·02·05·99"}
+                </button>
+
                 <div className="companion-settings">
                   <button
                     className="companion-settings-trigger"
@@ -732,6 +911,15 @@ function App() {
               </div>
             </div>
 
+            {structureGenerationState.message ? (
+              <p
+                className={`structure-generation-message ${structureGenerationState.status}`}
+                role={structureGenerationState.status === "error" ? "alert" : "status"}
+              >
+                {structureGenerationState.message}
+              </p>
+            ) : null}
+
             <div className="project-list">
               {projectLoadState === "loading" ? (
                 <p className="project-list-message">Lecture des dossiers locaux...</p>
@@ -770,6 +958,7 @@ function App() {
               projectPath={activeProject.locationLabel}
               branches={projectBranches}
               onOpenBranch={openProjectBranch}
+              onOpenPlum3={openPlum3App}
             />
           ) : (
             <div className="project-tree-placeholder">
@@ -800,10 +989,15 @@ function App() {
               }
               contextCopyState={contextCopyState}
               sessionCopyState={sessionCopyState}
+              sessionSourceLabel={selectedSessionDirectory}
+              sessionSourceState={sessionSourceState}
+              sessionSourceError={sessionSourceError}
               onOpenVsCode={openProjectInVsCode}
               onOpenGithub={openProjectGithub}
               onCopyContext={copyProjectContext}
               onCopySession={copySessionMarkdown}
+              onSelectSessionDirectory={selectChronosSessionDirectory}
+              onOpenChronos={openChronosApp}
             />
           ) : null
         }

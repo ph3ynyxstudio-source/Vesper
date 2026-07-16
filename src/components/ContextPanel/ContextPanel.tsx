@@ -11,10 +11,15 @@ type ContextPanelProps = {
   sessionEnd: string;
   contextCopyState?: "idle" | "copied" | "error";
   sessionCopyState?: "idle" | "copied" | "error";
+  sessionSourceLabel?: string;
+  sessionSourceState?: "idle" | "selecting" | "error";
+  sessionSourceError?: string;
   onOpenVsCode?: () => void;
   onOpenGithub?: () => void;
   onCopyContext?: () => void;
   onCopySession?: () => void;
+  onSelectSessionDirectory?: () => void;
+  onOpenChronos?: () => void;
 };
 
 const statusLabels: Record<ProjectStatus, string> = {
@@ -34,10 +39,15 @@ export function ContextPanel({
   sessionEnd,
   contextCopyState = "idle",
   sessionCopyState = "idle",
+  sessionSourceLabel,
+  sessionSourceState = "idle",
+  sessionSourceError,
   onOpenVsCode,
   onOpenGithub,
   onCopyContext,
   onCopySession,
+  onSelectSessionDirectory,
+  onOpenChronos,
 }: ContextPanelProps) {
   const contextCopyLabel = {
     idle: "Copier le contexte",
@@ -74,7 +84,7 @@ export function ContextPanel({
           <dt>Emplacement</dt>
           <dd>{locationLabel}</dd>
         </div>
-        <div>
+        <div className="context-panel-last-session">
           <dt>Dernière session</dt>
           <dd>{lastSession}</dd>
         </div>
@@ -117,8 +127,37 @@ export function ContextPanel({
       <section className="context-panel-section context-panel-session">
         <div className="context-panel-session-heading">
           <span>Fin de session</span>
-          <small>Markdown</small>
+          <div>
+            <small>Markdown</small>
+            <button
+              className="context-panel-session-launch"
+              type="button"
+              onClick={onOpenChronos}
+              disabled={!onOpenChronos}
+            >
+              Ouvrir Chr0
+            </button>
+          </div>
         </div>
+        <div className="context-panel-session-source">
+          <button
+            type="button"
+            onClick={onSelectSessionDirectory}
+            disabled={!onSelectSessionDirectory || sessionSourceState === "selecting"}
+          >
+            {sessionSourceState === "selecting"
+              ? "Ouverture..."
+              : "Choisir le dossier Chr0"}
+          </button>
+          <small title={sessionSourceLabel}>
+            {sessionSourceLabel ?? "Association automatique actuelle"}
+          </small>
+        </div>
+        {sessionSourceError ? (
+          <p className="context-panel-session-source-error" role="alert">
+            {sessionSourceError}
+          </p>
+        ) : null}
         <pre>{sessionEnd}</pre>
         <button
           className="context-panel-session-copy"

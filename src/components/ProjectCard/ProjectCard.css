@@ -1,0 +1,288 @@
+.project-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 7px;
+  align-items: center;
+  width: 100%;
+  min-height: 62px;
+  padding: 9px;
+  border: 1px solid rgba(62, 169, 216, 0.22);
+  border-radius: 10px;
+  color: var(--text-primary, #f4f7fb);
+  background: rgba(5, 13, 29, 0.92);
+  text-align: left;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.project-card:hover {
+  border-color: rgba(80, 210, 255, 0.52);
+  box-shadow: 0 0 14px rgba(84, 214, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.project-card-main-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+  min-width: 0;
+}
+
+.project-card-main {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.project-card.active {
+  border-color: rgba(224, 87, 255, 0.92);
+  box-shadow:
+    0 0 18px rgba(224, 87, 255, 0.22),
+    inset 0 0 18px rgba(224, 87, 255, 0.05);
+}
+
+.project-card-main:focus-visible,
+.project-card-icon:focus-visible,
+.project-card-status:focus-visible,
+.project-card-status-menu-item:focus-visible {
+  outline: 2px solid var(--accent-blue, rgb(84, 214, 255));
+  outline-offset: 2px;
+}
+
+.project-card-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid rgba(80, 210, 255, 0.34);
+  border-radius: 8px;
+  color: var(--accent-blue, rgb(84, 214, 255));
+  background: rgba(80, 210, 255, 0.08);
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow:
+    inset 0 0 14px rgba(80, 210, 255, 0.08),
+    0 0 10px rgba(80, 210, 255, 0.08);
+}
+
+.project-card-icon:disabled {
+  cursor: default;
+}
+
+.project-library-icon {
+  display: block;
+  width: 22px;
+  height: 22px;
+  background: currentColor;
+  filter: drop-shadow(0 0 8px currentColor);
+  mask: var(--project-icon-mask) center / contain no-repeat;
+}
+
+.project-card-icon svg {
+  width: 22px;
+  height: 22px;
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
+.project-card-icon.tone-gold {
+  border-color: rgba(255, 188, 59, 0.5);
+  color: #ffbf47;
+  background: rgba(255, 178, 26, 0.09);
+  box-shadow:
+    inset 0 0 14px rgba(255, 178, 26, 0.12),
+    0 0 12px rgba(255, 178, 26, 0.1);
+}
+
+.project-card-icon.tone-purple {
+  border-color: rgba(196, 132, 252, 0.54);
+  color: #d78cff;
+  background: rgba(168, 85, 247, 0.1);
+  box-shadow:
+    inset 0 0 14px rgba(168, 85, 247, 0.12),
+    0 0 12px rgba(168, 85, 247, 0.1);
+}
+
+.project-card-icon.tone-magenta {
+  border-color: rgba(224, 87, 255, 0.54);
+  color: #ff68f0;
+  background: rgba(224, 87, 255, 0.1);
+  box-shadow:
+    inset 0 0 14px rgba(224, 87, 255, 0.12),
+    0 0 12px rgba(224, 87, 255, 0.12);
+}
+
+.project-card-icon.tone-blue {
+  border-color: rgba(80, 210, 255, 0.5);
+  color: #50d2ff;
+  background: rgba(80, 210, 255, 0.09);
+  box-shadow:
+    inset 0 0 14px rgba(80, 210, 255, 0.12),
+    0 0 12px rgba(80, 210, 255, 0.1);
+}
+
+.project-card-title-group {
+  min-width: 0;
+}
+
+.project-card-title-group h3 {
+  margin: 0;
+  overflow: hidden;
+  color: var(--text-primary, #f4f7fb);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-card-status-control {
+  position: relative;
+  justify-self: start;
+  max-width: 100%;
+}
+
+.project-card-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 20px;
+  max-width: 100%;
+  padding: 2px 7px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: #22c55e;
+  background: rgba(3, 9, 22, 0.72);
+  box-shadow: 0 0 10px color-mix(in srgb, currentColor 22%, transparent);
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 170ms ease,
+    box-shadow 170ms ease,
+    transform 170ms ease;
+}
+
+.project-card-status:hover {
+  background: color-mix(in srgb, currentColor 12%, rgba(3, 9, 22, 0.72));
+  box-shadow: 0 0 15px color-mix(in srgb, currentColor 34%, transparent);
+  transform: translateY(-1px);
+}
+
+.project-card-status.active,
+.project-card-status-menu-item.active {
+  color: #22c55e;
+}
+
+.project-card-status.paused,
+.project-card-status-menu-item.paused {
+  color: #f59e0b;
+}
+
+.project-card-status.concept,
+.project-card-status-menu-item.concept {
+  color: #a855f7;
+}
+
+.project-card-status.archived,
+.project-card-status-menu-item.archived {
+  color: #64748b;
+}
+
+.project-card-status-menu {
+  position: fixed;
+  z-index: 100;
+  display: grid;
+  width: 190px;
+  gap: 4px;
+  padding: 9px;
+  border: 1px solid rgba(80, 210, 255, 0.32);
+  border-radius: 10px;
+  background: rgba(5, 14, 30, 0.98);
+  box-shadow:
+    0 14px 30px rgba(0, 0, 0, 0.38),
+    0 0 22px rgba(80, 210, 255, 0.12);
+  opacity: 0;
+  transform: scale(0.96) translateY(-4px);
+  transform-origin: top right;
+  animation: project-status-menu-in 170ms ease forwards;
+}
+
+.project-card-status-menu strong {
+  padding: 2px 4px 5px;
+  color: var(--text-secondary, #9aa8c2);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.project-card-status-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  padding: 5px 7px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--text-primary, #f4f7fb);
+  background: transparent;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.project-card-status-menu-item:hover {
+  border-color: currentColor;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+@keyframes project-status-menu-in {
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@media (max-width: 1510px) {
+  .project-card {
+    min-height: 54px;
+    padding: 7px;
+    border-radius: 8px;
+  }
+
+  .project-card-main-row {
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 7px;
+  }
+
+  .project-card-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    font-size: 16px;
+  }
+
+  .project-card-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .project-card-title-group h3 {
+    font-size: 12px;
+  }
+
+  .project-card-status {
+    min-height: 18px;
+    padding: 2px 6px;
+    font-size: 8px;
+  }
+}

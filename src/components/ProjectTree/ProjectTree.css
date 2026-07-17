@@ -1,0 +1,411 @@
+.project-tree {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 100%;
+  padding: 14px 16px 16px;
+  overflow: hidden;
+  border: 1px solid rgba(224, 87, 255, 0.34);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(224, 87, 255, 0.12), transparent 34%),
+    radial-gradient(circle at 16% 68%, rgba(80, 210, 255, 0.11), transparent 32%),
+    linear-gradient(180deg, rgba(5, 13, 29, 0.98), rgba(3, 8, 20, 0.98));
+}
+
+.project-tree::before {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(80, 210, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(80, 210, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.028) 0, rgba(255, 255, 255, 0.028) 1px, transparent 1px, transparent 148px),
+    linear-gradient(rgba(255, 255, 255, 0.02) 0, rgba(255, 255, 255, 0.02) 1px, transparent 1px, transparent 148px);
+  background-size:
+    42px 42px,
+    42px 42px,
+    148px 148px,
+    148px 148px;
+  background-position:
+    0 0,
+    0 0,
+    6px 10px,
+    6px 10px;
+  content: "";
+  opacity: 0.95;
+  mask-image: radial-gradient(circle at 50% 52%, black 0%, rgba(0, 0, 0, 0.94) 62%, transparent 90%);
+  pointer-events: none;
+}
+
+.project-tree::after {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(80, 210, 255, 0.045), transparent 18%, transparent 82%, rgba(224, 87, 255, 0.04)),
+    radial-gradient(circle at 24% 70%, rgba(80, 210, 255, 0.08), transparent 24%),
+    radial-gradient(circle at 72% 32%, rgba(224, 87, 255, 0.07), transparent 28%);
+  opacity: 0.8;
+  mask-image: linear-gradient(180deg, transparent 0, black 14%, black 88%, transparent 100%);
+  pointer-events: none;
+}
+
+.project-tree-heading {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.project-tree-heading span {
+  color: #e57cff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.project-tree-heading h2 {
+  margin: 2px 0;
+  color: var(--text-primary);
+  font-size: 18px;
+  letter-spacing: 0;
+}
+
+.project-tree-heading p {
+  max-width: 620px;
+  margin: 0;
+  overflow: hidden;
+  color: #16f5ff;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-tree-heading > strong {
+  padding: 4px 10px;
+  border: 1px solid rgba(80, 210, 255, 0.45);
+  border-radius: 999px;
+  color: #16f5ff;
+  background: rgba(80, 210, 255, 0.07);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.project-genealogy-map {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: auto auto auto;
+  align-content: center;
+  min-height: 0;
+  margin-top: 6px;
+}
+
+.project-genealogy-lines {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 92%;
+  height: 42px;
+  margin: 1px auto -6px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.tree-line-main,
+.tree-line-branch {
+  fill: none;
+  stroke: url(#treeLineGradient);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: url(#treeLineGlow);
+}
+
+.tree-line-main {
+  stroke-width: 5;
+}
+
+.tree-line-branch {
+  stroke-width: 4;
+}
+
+.project-tree-root-node {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  justify-self: center;
+  place-items: center;
+  width: 150px;
+  padding-top: 0;
+  text-align: center;
+}
+
+.project-tree-root-orb {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 2px solid rgba(224, 87, 255, 0.72);
+  border-radius: 12px;
+  background: rgba(124, 77, 255, 0.12);
+  box-shadow:
+    0 0 28px rgba(224, 87, 255, 0.28),
+    inset 0 0 22px rgba(80, 210, 255, 0.08);
+  transform: rotate(30deg);
+}
+
+.project-tree-root-orb svg {
+  width: 30px;
+  height: 30px;
+  transform: rotate(-30deg);
+}
+
+.project-tree-root-node strong {
+  width: 100%;
+  margin-top: 3px;
+  padding: 3px 8px;
+  overflow: hidden;
+  border: 1px solid rgba(224, 87, 255, 0.7);
+  border-radius: 8px;
+  color: var(--text-primary);
+  background: rgba(9, 8, 26, 0.82);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: 0 0 20px rgba(224, 87, 255, 0.18);
+}
+
+.project-tree-root-node small {
+  margin-top: 2px;
+  color: #ff4df3;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.project-tree-branches {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(4, auto);
+  gap: clamp(36px, 7vw, 120px);
+  align-items: center;
+  justify-content: center;
+  margin-top: 0;
+}
+
+.project-tree-node {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  padding: 0;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  color: #50d2ff;
+  background:
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, currentColor 16%, transparent), transparent 62%),
+    rgba(3, 9, 22, 0.72);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease,
+    filter 0.18s ease;
+}
+
+.project-tree-node:hover,
+.project-tree-node:focus-visible {
+  filter: drop-shadow(0 0 16px currentColor);
+  outline: none;
+  transform: translateY(-3px);
+}
+
+.project-tree-node:disabled {
+  cursor: not-allowed;
+  filter: none;
+  opacity: 0.62;
+  transform: none;
+}
+
+.project-tree-node-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin: 0;
+  filter: drop-shadow(0 0 12px currentColor);
+}
+
+.project-tree-node-icon svg {
+  width: 32px;
+  height: 32px;
+}
+
+.project-tree-plum3-launch {
+  position: absolute;
+  right: 18px;
+  bottom: 14px;
+  min-width: 84px;
+  padding: 8px 12px;
+  border: 1px solid rgba(80, 210, 255, 0.42);
+  border-radius: 6px;
+  color: var(--accent-blue);
+  background: rgba(80, 210, 255, 0.08);
+  box-shadow: none;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.project-tree-plum3-launch:hover:not(:disabled),
+.project-tree-plum3-launch:focus-visible {
+  border-color: rgba(80, 210, 255, 0.75);
+  background: rgba(80, 210, 255, 0.14);
+  box-shadow: 0 0 12px rgba(80, 210, 255, 0.16);
+  outline: none;
+}
+
+.project-tree-plum3-launch:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.tone-cyan {
+  color: #50d2ff;
+}
+
+.tone-turquoise {
+  color: #18f5d2;
+}
+
+.tone-magenta {
+  color: #ff1ee8;
+}
+
+.tone-gold {
+  color: #ffb21a;
+}
+
+@media (max-width: 1510px) {
+  .project-tree {
+    padding: 10px 12px 12px;
+    border-radius: 16px;
+  }
+
+  .project-tree-heading span {
+    font-size: 10px;
+  }
+
+  .project-tree-heading h2 {
+    margin-top: 2px;
+    font-size: 14px;
+  }
+
+  .project-tree-heading p {
+    max-width: 430px;
+    font-size: 10px;
+  }
+
+  .project-genealogy-map {
+    min-height: 0;
+    margin-top: 0;
+  }
+
+  .project-genealogy-lines {
+    height: 30px;
+    margin: -1px auto -6px;
+  }
+
+  .project-tree-root-orb {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+
+  .project-tree-root-orb svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .project-tree-root-node strong {
+    margin-top: 3px;
+    padding: 2px 7px;
+    font-size: 10px;
+  }
+
+  .project-tree-root-node small {
+    font-size: 8px;
+  }
+
+  .project-tree-branches {
+    gap: clamp(28px, 6vw, 72px);
+    margin-top: 0;
+  }
+
+  .project-tree-node {
+    width: 56px;
+    height: 56px;
+  }
+
+  .project-tree-node-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .project-tree-node-icon svg {
+    width: 26px;
+    height: 26px;
+  }
+
+  .project-tree-plum3-launch {
+    right: 6px;
+    bottom: 4px;
+    min-width: 76px;
+    padding: 6px 9px;
+    font-size: 8px;
+  }
+}
+
+@media (max-width: 760px) {
+  .project-genealogy-map {
+    min-height: 0;
+  }
+
+  .project-tree-plum3-launch {
+    position: static;
+    justify-self: end;
+    margin-top: 12px;
+  }
+
+  .project-genealogy-lines {
+    display: none;
+  }
+
+  .project-tree-branches {
+    grid-template-columns: repeat(4, auto);
+    gap: clamp(14px, 5vw, 28px);
+    margin-top: 18px;
+  }
+
+  .project-tree-node {
+    width: 52px;
+    height: 52px;
+  }
+
+  .project-tree-node-icon {
+    width: 26px;
+    height: 26px;
+  }
+
+  .project-tree-node-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+}

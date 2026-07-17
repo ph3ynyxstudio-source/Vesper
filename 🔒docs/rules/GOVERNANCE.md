@@ -75,7 +75,7 @@ Chaque réponse doit préciser :
 
 Décision actuelle
 
-VespΣr v0.1 avance une étape à la fois.
+VespΣr 1.0 évolue une étape à la fois.
 
 La documentation précède l'implémentation.
 

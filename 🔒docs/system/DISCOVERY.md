@@ -161,7 +161,7 @@ Objectifs :
 
 ---
 
-MVP v0.1
+Version 1.0
 
 Inclus :
 

@@ -12,7 +12,10 @@ Son rôle est de permettre à l'utilisateur de retrouver rapidement :
 - leurs ressources ;
 - leurs dernières sessions.
 
-La version 1.0 est principalement en lecture seule.
+VespΣr reste en lecture seule pour les projets et fichiers existants, sauf pour
+les actions de création explicitement déclenchées, prévisualisées et confirmées
+par l'utilisateur. Aucun renommage, déplacement, écrasement ou suppression
+implicite n'est autorisé.
 
 ---
 
@@ -41,12 +44,14 @@ VespΣr peut :
 - ouvrir un repository Git ;
 - ouvrir des URLs externes.
 
-Exception explicite :
+Écritures explicitement autorisées :
 
-- initialiser, à la demande de l'utilisateur et après confirmation, les quatre
-  sous-dossiers normalisés d'un projet déjà créé manuellement ;
+- créer un nouveau dossier projet sous la racine VespΣr autorisée ;
+- créer, pour ce nouveau projet, les quatre sous-dossiers normalisés ;
+- créer le dossier Chr0 associé et ses cinq sous-dossiers lorsqu'il est absent ;
+- associer sans le modifier un dossier Chr0 existant et complet ;
 - refuser l'opération si un sous-dossier cible existe déjà ;
-- ne créer ni projet, ni document, ni fichier de métadonnées dans ce flux.
+- ne créer aucun document ni fichier de métadonnées dans ce flux.
 
 VespΣr peut également enregistrer dans `vesper.json`, après une action
 explicite, le statut ou l'identifiant d'icône choisi pour un projet.
@@ -57,8 +62,8 @@ Interdit dans le MVP
 
 VespΣr ne doit pas :
 
-- créer un projet ;
 - supprimer un projet ;
+- renommer, déplacer ou écraser un projet existant ;
 - modifier un document ;
 - éditer un fichier Markdown ;
 - générer automatiquement du contenu ;
@@ -90,7 +95,7 @@ Décisions connues
 - Local First
 - Filesystem First
 - Human First
-- Read Only MVP
+- Local First · Écritures confirmées
 
 ---
 

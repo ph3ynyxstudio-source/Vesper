@@ -15,6 +15,7 @@ type ContextPanelProps = {
   sessionSourceState?: "idle" | "selecting" | "error";
   sessionSourceError?: string;
   onOpenVsCode?: () => void;
+  onOpenExplorer?: () => void;
   onOpenGithub?: () => void;
   onCopyContext?: () => void;
   onCopySession?: () => void;
@@ -43,6 +44,7 @@ export function ContextPanel({
   sessionSourceState = "idle",
   sessionSourceError,
   onOpenVsCode,
+  onOpenExplorer,
   onOpenGithub,
   onCopyContext,
   onCopySession,
@@ -103,6 +105,14 @@ export function ContextPanel({
           disabled={!onOpenVsCode}
         >
           Ouvrir dans VS Code
+        </button>
+        <button
+          className="context-panel-action-button"
+          type="button"
+          onClick={onOpenExplorer}
+          disabled={!onOpenExplorer}
+        >
+          Ouvrir dans l’Explorateur
         </button>
         <button
           className="context-panel-action-button"

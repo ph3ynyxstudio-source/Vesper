@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { emitTo, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -6,6 +6,11 @@ import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { open } from "@tauri-apps/plugin-dialog";
 import { CockpitLayout } from "./components/CockpitLayout/CockpitLayout";
 import { ContextPanel } from "./components/ContextPanel/ContextPanel";
+import {
+  NewProjectDialog,
+  type NewProjectCreationReport,
+  type NewProjectPreparationReport,
+} from "./components/NewProjectDialog/NewProjectDialog";
 import {
   ProjectCard,
   type ProjectStatus,
@@ -28,14 +33,22 @@ import "./App.css";
 
 type CopyState = "idle" | "copied" | "error";
 
-type StructureGenerationState = {
-  status: "idle" | "creating" | "success" | "error";
-  message?: string;
-};
-
 type CompanionSettings = {
   visible: boolean;
   shadow: boolean;
+};
+
+type NewProjectForm = {
+  projectName: string;
+  createVesperStructure: boolean;
+  createOrAssociateChronos: boolean;
+};
+
+type NewProjectRequestState = "idle" | "loading" | "ready" | "error";
+
+type PreparedNewProject = {
+  form: NewProjectForm;
+  report: NewProjectPreparationReport;
 };
 
 type ProjectDirectory = {
@@ -125,6 +138,24 @@ function readSessionFolderSelections(): Record<string, string> {
   } catch {
     return {};
   }
+}
+
+function saveSessionFolderSelection(
+  currentSelections: Record<string, string>,
+  projectPath: string,
+  chronosProjectPath: string,
+) {
+  const nextSelections = {
+    ...currentSelections,
+    [projectPath]: chronosProjectPath,
+  };
+
+  localStorage.setItem(
+    sessionFolderSelectionsStorageKey,
+    JSON.stringify(nextSelections),
+  );
+
+  return nextSelections;
 }
 
 function formatModifiedDate(epochSeconds?: number) {
@@ -244,6 +275,54 @@ function toLocalProject(directory: ProjectDirectory): LocalProject {
   };
 }
 
+async function loadLocalProjects() {
+  const directories = await invoke<ProjectDirectory[]>("list_project_directories");
+  return directories.map(toLocalProject);
+}
+
+const defaultNewProjectForm: NewProjectForm = {
+  projectName: "",
+  createVesperStructure: true,
+  createOrAssociateChronos: true,
+};
+
+function sameNewProjectForm(left: NewProjectForm, right: NewProjectForm) {
+  return (
+    left.projectName === right.projectName &&
+    left.createVesperStructure === right.createVesperStructure &&
+    left.createOrAssociateChronos === right.createOrAssociateChronos
+  );
+}
+
+function normalizedWindowsPath(path: string) {
+  return path.replace(/^\\\\\?\\/, "").replace(/\//g, "\\").toLocaleLowerCase();
+}
+
+function sameWindowsPath(left: string, right: string) {
+  return normalizedWindowsPath(left) === normalizedWindowsPath(right);
+}
+
+function reportVerifiesPath(report: NewProjectCreationReport, path: string) {
+  return report.operations.some(
+    (operation) =>
+      sameWindowsPath(operation.path, path) &&
+      (operation.result === "verified" ||
+        operation.result === "already_existing_valid"),
+  );
+}
+
+function reportVerifiesChronos(
+  creation: NewProjectCreationReport,
+  preparation: NewProjectPreparationReport,
+) {
+  return (
+    reportVerifiesPath(creation, preparation.chronos_path) &&
+    preparation.chronos_directory_paths.every((path) =>
+      reportVerifiesPath(creation, path),
+    )
+  );
+}
+
 function App() {
   const [projects, setProjects] = useState<LocalProject[]>([]);
   const [activeProjectName, setActiveProjectName] = useState<string>();
@@ -256,9 +335,6 @@ function App() {
   const [projectTreeState, setProjectTreeState] =
     useState<"loading" | "ready" | "error">("loading");
   const [isCompanionPanelOpen, setIsCompanionPanelOpen] = useState(false);
-  const [structureGenerationRevision, setStructureGenerationRevision] = useState(0);
-  const [structureGenerationState, setStructureGenerationState] =
-    useState<StructureGenerationState>({ status: "idle" });
   const [iconPickerProjectName, setIconPickerProjectName] = useState<string>();
   const [iconPickerError, setIconPickerError] = useState<string>();
   const [officialContextContent, setOfficialContextContent] = useState<string>();
@@ -276,6 +352,22 @@ function App() {
     "idle" | "selecting" | "error"
   >("idle");
   const [sessionSourceError, setSessionSourceError] = useState<string>();
+  const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
+  const [newProjectForm, setNewProjectForm] = useState<NewProjectForm>(
+    defaultNewProjectForm,
+  );
+  const [newProjectPreparationState, setNewProjectPreparationState] =
+    useState<NewProjectRequestState>("idle");
+  const [preparedNewProject, setPreparedNewProject] =
+    useState<PreparedNewProject>();
+  const [newProjectCreationState, setNewProjectCreationState] =
+    useState<NewProjectRequestState>("idle");
+  const [newProjectCreationReport, setNewProjectCreationReport] =
+    useState<NewProjectCreationReport>();
+  const [newProjectFrontendError, setNewProjectFrontendError] = useState<string>();
+  const newProjectFormRevision = useRef(0);
+  const newProjectPreparationInFlight = useRef(false);
+  const newProjectCreationInFlight = useRef(false);
   const activeProject = useMemo(
     () =>
       projects.find((project) => project.name === activeProjectName) ??
@@ -294,10 +386,7 @@ function App() {
 
     async function loadProjects() {
       try {
-        const directories = await invoke<ProjectDirectory[]>(
-          "list_project_directories",
-        );
-        const nextProjects = directories.map(toLocalProject);
+        const nextProjects = await loadLocalProjects();
 
         if (!isMounted) return;
         setProjects(nextProjects);
@@ -425,7 +514,7 @@ function App() {
     return () => {
       isMounted = false;
     };
-  }, [activeProject, structureGenerationRevision]);
+  }, [activeProject]);
 
   useEffect(() => {
     let isMounted = true;
@@ -583,11 +672,163 @@ function App() {
     }
   }
 
+  function openNewProjectDialog() {
+    newProjectFormRevision.current += 1;
+    setNewProjectForm({ ...defaultNewProjectForm });
+    setNewProjectPreparationState("idle");
+    setPreparedNewProject(undefined);
+    setNewProjectCreationState("idle");
+    setNewProjectCreationReport(undefined);
+    setNewProjectFrontendError(undefined);
+    setIsNewProjectDialogOpen(true);
+  }
+
+  function closeNewProjectDialog() {
+    if (newProjectCreationInFlight.current) return;
+
+    newProjectFormRevision.current += 1;
+    setIsNewProjectDialogOpen(false);
+  }
+
+  function updateNewProjectForm(changes: Partial<NewProjectForm>) {
+    if (newProjectCreationInFlight.current || newProjectCreationReport) return;
+
+    newProjectFormRevision.current += 1;
+    setNewProjectForm((currentForm) => ({ ...currentForm, ...changes }));
+    setNewProjectPreparationState("idle");
+    setPreparedNewProject(undefined);
+    setNewProjectFrontendError(undefined);
+  }
+
+  async function verifyNewProject() {
+    if (
+      newProjectPreparationInFlight.current ||
+      newProjectCreationInFlight.current ||
+      newProjectCreationReport
+    ) {
+      return;
+    }
+
+    const form = { ...newProjectForm };
+    const revision = newProjectFormRevision.current;
+    newProjectPreparationInFlight.current = true;
+    setNewProjectPreparationState("loading");
+    setPreparedNewProject(undefined);
+    setNewProjectCreationState("idle");
+    setNewProjectFrontendError(undefined);
+
+    try {
+      const report = await invoke<NewProjectPreparationReport>(
+        "prepare_new_project",
+        {
+          projectName: form.projectName,
+          createVesperStructure: form.createVesperStructure,
+          createOrAssociateChronos: form.createOrAssociateChronos,
+        },
+      );
+
+      if (newProjectFormRevision.current !== revision) return;
+
+      setPreparedNewProject({ form, report });
+      setNewProjectPreparationState("ready");
+    } catch (error: unknown) {
+      console.error("Unable to prepare the new project", error);
+      if (newProjectFormRevision.current !== revision) return;
+
+      setNewProjectPreparationState("error");
+      setNewProjectFrontendError(
+        "Impossible de vérifier ce projet. Aucune écriture n’a été effectuée.",
+      );
+    } finally {
+      newProjectPreparationInFlight.current = false;
+    }
+  }
+
+  async function createNewProject() {
+    if (newProjectCreationInFlight.current || newProjectPreparationInFlight.current) return;
+    if (!preparedNewProject?.report.can_create) return;
+    if (!sameNewProjectForm(newProjectForm, preparedNewProject.form)) return;
+
+    newProjectCreationInFlight.current = true;
+    const prepared = preparedNewProject;
+    setNewProjectCreationState("loading");
+    setNewProjectCreationReport(undefined);
+    setNewProjectFrontendError(undefined);
+
+    try {
+      const report = await invoke<NewProjectCreationReport>("create_new_project", {
+        projectName: prepared.form.projectName,
+        createVesperStructure: prepared.form.createVesperStructure,
+        createOrAssociateChronos: prepared.form.createOrAssociateChronos,
+        confirmed: true,
+      });
+      const warnings: string[] = [];
+      const vesperVerified = reportVerifiesPath(report, report.project_path);
+      let selectedProject: LocalProject | undefined;
+
+      if (vesperVerified) {
+        try {
+          const nextProjects = await loadLocalProjects();
+          setProjects(nextProjects);
+          selectedProject = nextProjects.find(
+            (project) =>
+              project.name === prepared.form.projectName &&
+              sameWindowsPath(project.locationLabel, report.project_path),
+          );
+
+          if (selectedProject) {
+            selectProject(selectedProject.name);
+          } else {
+            warnings.push(
+              "Le dossier VespΣr a été vérifié, mais le projet n’apparaît pas dans la liste rechargée; la sélection automatique n’a pas été confirmée.",
+            );
+          }
+        } catch (error: unknown) {
+          console.error("Unable to reload projects after creation", error);
+          warnings.push(
+            "Le dossier VespΣr a été vérifié, mais la liste des projets n’a pas pu être rechargée.",
+          );
+        }
+      } else {
+        warnings.push(
+          "Le backend n’a pas confirmé le dossier VespΣr final; aucun rechargement ni sélection n’est déclaré réussi.",
+        );
+      }
+
+      if (prepared.form.createOrAssociateChronos) {
+        if (reportVerifiesChronos(report, prepared.report)) {
+          const projectPath = selectedProject?.locationLabel ?? report.project_path;
+          const nextSelections = saveSessionFolderSelection(
+            sessionFolderSelections,
+            projectPath,
+            report.chronos_path,
+          );
+          setSessionFolderSelections(nextSelections);
+        } else {
+          warnings.push(
+            "L’association Chr0 n’a pas été enregistrée, car sa vérification finale est incomplète ou en échec.",
+          );
+        }
+      }
+
+      setNewProjectCreationReport(report);
+      setNewProjectCreationState("ready");
+      setNewProjectFrontendError(warnings.length ? warnings.join(" ") : undefined);
+    } catch (error: unknown) {
+      console.error("Unable to create the new project", error);
+      setNewProjectCreationState("error");
+      setNewProjectFrontendError(
+        "La commande de création n’a pas retourné de rapport exploitable.",
+      );
+    } finally {
+      newProjectCreationInFlight.current = false;
+    }
+  }
+
   function selectProject(projectName: string) {
     setActiveProjectName(projectName);
     setContextCopyState("idle");
     setSessionCopyState("idle");
-    setStructureGenerationState({ status: "idle" });
     setSessionSourceState("idle");
     setSessionSourceError(undefined);
   }
@@ -614,14 +855,10 @@ function App() {
         "validate_chronos_project_directory",
         { path: selectedPath },
       );
-      const nextSelections = {
-        ...sessionFolderSelections,
-        [activeProject.locationLabel]: validatedPath,
-      };
-
-      localStorage.setItem(
-        sessionFolderSelectionsStorageKey,
-        JSON.stringify(nextSelections),
+      const nextSelections = saveSessionFolderSelection(
+        sessionFolderSelections,
+        activeProject.locationLabel,
+        validatedPath,
       );
       setSessionFolderSelections(nextSelections);
       setSessionSourceState("idle");
@@ -633,46 +870,6 @@ function App() {
       setSessionSourceError(
         "Sélection refusée : choisissez un dossier projet directement dans le dossier Chr0nosV3rs.",
       );
-    }
-  }
-
-  async function createActiveProjectStructure() {
-    if (!activeProject || structureGenerationState.status === "creating") return;
-
-    const confirmed = window.confirm(
-      `Créer les dossiers 01, 02, 05 et 99 dans :\n${activeProject.locationLabel}\n\nAucun dossier existant ne sera remplacé.`,
-    );
-    if (!confirmed) return;
-
-    setStructureGenerationState({
-      status: "creating",
-      message: "Création de la structure...",
-    });
-
-    try {
-      await invoke<string[]>("create_project_structure", {
-        projectPath: activeProject.locationLabel,
-      });
-      setStructureGenerationRevision((revision) => revision + 1);
-      setStructureGenerationState({
-        status: "success",
-        message: `Structure créée pour ${activeProject.name}.`,
-      });
-      await notifyVesperion("success", "Structure");
-    } catch (error: unknown) {
-      const details = String(error);
-      const existingTarget = details.startsWith("target_exists:")
-        ? details.slice("target_exists:".length)
-        : undefined;
-
-      console.error("Unable to create the project structure", error);
-      setStructureGenerationState({
-        status: "error",
-        message: existingTarget
-          ? `Création annulée : ${existingTarget} existe déjà.`
-          : "Impossible de créer la structure dans ce projet.",
-      });
-      await notifyVesperion("error", "Structure");
     }
   }
 
@@ -775,11 +972,26 @@ function App() {
     try {
       await invoke("open_project_vscode", {
         projectName: activeProject.name,
+        projectPath: activeProject.locationLabel,
       });
       await notifyVesperion("success", "VS Code");
     } catch (error: unknown) {
       console.error("Unable to open the project in VS Code", error);
       await notifyVesperion("error", "VS Code");
+    }
+  }
+
+  async function openProjectInExplorer() {
+    if (!activeProject) return;
+
+    try {
+      await invoke("open_project_directory", {
+        path: activeProject.locationLabel,
+      });
+      await notifyVesperion("success", "Explorateur");
+    } catch (error: unknown) {
+      console.error("Unable to open the project in Explorer", error);
+      await notifyVesperion("error", "Explorateur");
     }
   }
 
@@ -893,7 +1105,7 @@ function App() {
 
             <footer className="cockpit-system-state">
               <span>Local first</span>
-              <span>Lecture seule</span>
+              <span>Écritures confirmées</span>
             </footer>
           </div>
         }
@@ -906,16 +1118,11 @@ function App() {
               </div>
               <div className="project-heading-actions">
                 <button
-                  className="project-manager-trigger"
+                  className="project-manager-trigger new-project-trigger"
                   type="button"
-                  disabled={
-                    !activeProject || structureGenerationState.status === "creating"
-                  }
-                  onClick={createActiveProjectStructure}
+                  onClick={openNewProjectDialog}
                 >
-                  {structureGenerationState.status === "creating"
-                    ? "Création..."
-                    : "Générer 01·02·05·99"}
+                  Nouveau projet
                 </button>
 
                 <div className="companion-settings">
@@ -967,15 +1174,6 @@ function App() {
                 </span>
               </div>
             </div>
-
-            {structureGenerationState.message ? (
-              <p
-                className={`structure-generation-message ${structureGenerationState.status}`}
-                role={structureGenerationState.status === "error" ? "alert" : "status"}
-              >
-                {structureGenerationState.message}
-              </p>
-            ) : null}
 
             <div className="project-list">
               {projectLoadState === "loading" ? (
@@ -1051,6 +1249,7 @@ function App() {
               sessionSourceState={sessionSourceState}
               sessionSourceError={sessionSourceError}
               onOpenVsCode={openProjectInVsCode}
+              onOpenExplorer={openProjectInExplorer}
               onOpenGithub={openProjectGithub}
               onCopyContext={copyProjectContext}
               onCopySession={copySessionMarkdown}
@@ -1060,6 +1259,37 @@ function App() {
           ) : null
         }
       />
+      {isNewProjectDialogOpen ? (
+        <NewProjectDialog
+          projectName={newProjectForm.projectName}
+          createVesperStructure={newProjectForm.createVesperStructure}
+          createOrAssociateChronos={newProjectForm.createOrAssociateChronos}
+          projectsRoot={projectsRoot}
+          chronosRoot={chronosProjectsRoot}
+          preparationState={newProjectPreparationState}
+          preparation={preparedNewProject?.report}
+          creationState={newProjectCreationState}
+          creation={newProjectCreationReport}
+          frontendError={newProjectFrontendError}
+          canCreate={Boolean(
+            preparedNewProject?.report.can_create &&
+              sameNewProjectForm(newProjectForm, preparedNewProject.form) &&
+              newProjectPreparationState === "ready" &&
+              newProjectCreationState !== "loading" &&
+              !newProjectCreationReport,
+          )}
+          onProjectNameChange={(projectName) => updateNewProjectForm({ projectName })}
+          onCreateVesperStructureChange={(createVesperStructure) =>
+            updateNewProjectForm({ createVesperStructure })
+          }
+          onCreateOrAssociateChronosChange={(createOrAssociateChronos) =>
+            updateNewProjectForm({ createOrAssociateChronos })
+          }
+          onVerify={verifyNewProject}
+          onCreate={createNewProject}
+          onClose={closeNewProjectDialog}
+        />
+      ) : null}
       {iconPickerProject ? (
         <ProjectIconPicker
           projectName={iconPickerProject.name}

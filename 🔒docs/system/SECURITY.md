@@ -34,24 +34,28 @@ VespΣr peut lire :
 
 ---
 
-Écriture interdite
+Écritures confirmées uniquement
 
 Dans le MVP :
 
-VespΣr ne doit pas :
+VespΣr reste en lecture seule pour les projets et fichiers existants, sauf pour
+les actions de création explicitement déclenchées, prévisualisées et confirmées
+par l'utilisateur. Aucun renommage, déplacement, écrasement ou suppression
+implicite n'est autorisé.
 
-- créer des fichiers ;
-- modifier des fichiers ;
+VespΣr ne doit jamais :
+
 - supprimer des fichiers ;
 - renommer des fichiers ;
 - déplacer des fichiers.
 
 Exception limitée :
 
-VespΣr peut créer les sous-dossiers normalisés `01`, `02`, `05` et `99` dans
-un projet existant, uniquement après une action et une confirmation explicites
-de l'utilisateur. Le backend doit valider que le projet appartient à la racine
-autorisée et refuser toute cible déjà existante avant la première création.
+VespΣr peut créer, après préparation et confirmation, un nouveau
+dossier directement sous la racine VespΣr autorisée, sa structure normalisée,
+ainsi que le dossier Chr0 directement sous sa racine autorisée et ses cinq
+sous-dossiers. Un dossier Chr0 existant et complet peut être associé sans être
+modifié. Un dossier Chr0 incomplet doit bloquer cette partie de l'opération.
 
 VespΣr peut aussi écrire les champs `status` et `icon` dans `vesper.json` après
 une action explicite. L'identifiant d'icône doit être validé côté backend et
@@ -63,11 +67,12 @@ Limitation des chemins
 
 Toute lecture doit être limitée aux racines configurées.
 
-Exemple :
+Racines d'écriture du flux Nouveau projet :
 
-C:\Ph3yNyx.OS\Devs
+- `C:\Ph3yNyx.OS\05_⭐VESPΣR` ;
+- `C:\Users\pheyr\AppData\Roaming\com.ph3yn.chronosvers\projects`.
 
-Le backend Rust doit valider les chemins avant toute lecture.
+Le backend Rust doit valider les chemins avant toute lecture ou écriture.
 
 ---
 
@@ -125,7 +130,7 @@ VespΣr ne doit pas les modifier.
 Décisions connues
 
 - Local First
-- Read Only MVP
+- Local First · Écritures confirmées
 - Permissions minimales
 - Aucune télémétrie
 

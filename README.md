@@ -15,7 +15,7 @@ Son objectif est simple :
 
 VespΣr n'est pas un gestionnaire de projet.
 
-VespΣr est une couche de lecture et d'orientation construite au-dessus du filesystem.
+VespΣr est une couche d'orientation construite au-dessus du filesystem.
 
 ---
 
@@ -35,9 +35,11 @@ Les projets existent parce qu'ils existent sur le disque.
 
 VespΣr observe cette structure et la rend plus facile à explorer.
 
-Read Only V1
+Écritures confirmées V1
 
-La version 1.0 reste principalement en lecture seule.
+VespΣr reste en lecture seule pour les projets et fichiers existants, sauf pour
+les actions de création explicitement déclenchées, prévisualisées et confirmées
+par l'utilisateur.
 
 VespΣr peut :
 
@@ -48,10 +50,9 @@ VespΣr peut :
 
 VespΣr ne doit pas :
 
-- modifier les documents ;
-- réécrire des fichiers ;
-- supprimer des données ;
-- produire automatiquement du contenu.
+- renommer, déplacer, écraser ou supprimer implicitement un projet ou un fichier ;
+- modifier les documents existants ;
+- produire automatiquement du contenu sans action explicite.
 
 ---
 
@@ -95,7 +96,7 @@ Inclus
 - affichage du contexte ;
 - affichage des dernières sessions ;
 - navigation entre projets ;
-- génération confirmée de la structure normalisée d'un projet existant ;
+- création confirmée d'un nouveau projet et de son dossier chr0 associé ;
 - sélection locale de la source des sessions chr0 ;
 - ouverture rapide :
   - VS Code ;
